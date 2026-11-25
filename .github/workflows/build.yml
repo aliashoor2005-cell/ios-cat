@@ -12,7 +12,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang make zip unzip git curl wget xz-utils bzip2 jq build-essential
+          sudo apt-get install -y clang make zip unzip git curl wget xz-utils bzip2 jq file build-essential
           curl -fsSL https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64 -o /tmp/ldid || \
           curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux_x86_64 -o /tmp/ldid || true
           if [ -f /tmp/ldid ]; then
@@ -24,14 +24,14 @@ jobs:
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
 
-          mkdir -p ~/theos/toolchain/linux/iphone
-          TOOLCHAIN_URL=""
+          TOOLCHAIN_BASE="$HOME/theos/toolchain/linux/iphone"
+          mkdir -p "$TOOLCHAIN_BASE/bin" /tmp/tc_extract
 
-          # البحث عن أرشيف toolchain لـ linux/iphone من أحدث إصدارات GitHub
-          for repo in "kabiroberai/darwin-tools-linux" "CRKatri/llvm-project" "theos/toolchain"; do
+          TOOLCHAIN_URL=""
+          for repo in "theos/toolchain" "kabiroberai/darwin-tools-linux" "CRKatri/llvm-project"; do
             FOUND=$(curl -fsSL "https://api.github.com/repos/$repo/releases" | \
               jq -r '.[].assets[].browser_download_url' | \
-              grep -iE "linux.*(iphone|darwin|toolchain).*\.(tar\.(xz|gz|bz2)|tgz|tbz|txz|zip)$" | head -n 1 || true)
+              grep -iE "(linux|ubuntu|x86_64).*\.(tar\.(xz|gz|bz2)|tgz|tbz|txz|zip)$" | head -n 1 || true)
             if [ -n "$FOUND" ]; then
               TOOLCHAIN_URL="$FOUND"
               break
@@ -39,27 +39,31 @@ jobs:
           done
 
           echo "Selected Toolchain URL: ${TOOLCHAIN_URL:-NONE}"
-          if [ -z "$TOOLCHAIN_URL" ]; then
-            echo "Could not find a Linux iOS toolchain release asset via GitHub API."
-            exit 1
+          if [ -n "$TOOLCHAIN_URL" ]; then
+            curl -fL "$TOOLCHAIN_URL" -o /tmp/toolchain_archive
+            case "$TOOLCHAIN_URL" in
+              *.tar.xz|*.txz)  tar -xJf /tmp/toolchain_archive -C /tmp/tc_extract || true ;;
+              *.tar.bz2|*.tbz) tar -xjf /tmp/toolchain_archive -C /tmp/tc_extract || true ;;
+              *.tar.gz|*.tgz)  tar -xzf /tmp/toolchain_archive -C /tmp/tc_extract || true ;;
+              *.zip)           unzip -qo /tmp/toolchain_archive -d /tmp/tc_extract || true ;;
+            esac
+
+            cp -rn /tmp/tc_extract/* "$TOOLCHAIN_BASE/" 2>/dev/null || true
+
+            # نقل أو ربط أي ملفات تنفيذية مثل clang / ld64 إلى مجلد bin المطلوب
+            CLANG_BIN=$(find /tmp/tc_extract "$TOOLCHAIN_BASE" -type f -name "*clang*" -executable 2>/dev/null | head -n 1 || true)
+            if [ -n "$CLANG_BIN" ]; then
+              SRC_BIN_DIR=$(dirname "$CLANG_BIN")
+              cp -rn "$SRC_BIN_DIR"/* "$TOOLCHAIN_BASE/bin/" 2>/dev/null || true
+              if [ ! -e "$TOOLCHAIN_BASE/bin/clang" ]; then
+                ln -sf "$CLANG_BIN" "$TOOLCHAIN_BASE/bin/clang"
+              fi
+            fi
           fi
 
-          curl -fL "$TOOLCHAIN_URL" -o /tmp/toolchain_archive
-
-          case "$TOOLCHAIN_URL" in
-            *.tar.xz|*.txz)  tar -xJf /tmp/toolchain_archive -C ~/theos/toolchain/linux/iphone/ ;;
-            *.tar.bz2|*.tbz) tar -xjf /tmp/toolchain_archive -C ~/theos/toolchain/linux/iphone/ ;;
-            *.tar.gz|*.tgz)  tar -xzf /tmp/toolchain_archive -C ~/theos/toolchain/linux/iphone/ ;;
-            *.zip)           unzip -q /tmp/toolchain_archive -d ~/theos/toolchain/linux/iphone/ ;;
-          esac
-
-          # إذا كان الأرشيف يحتوي مجلداً داخلياً مثل iphone أو toolchain، نرفع محتوياته لمسار ~/theos/toolchain/linux/iphone
-          INNER_BIN=$(find ~/theos/toolchain/linux/iphone -maxdepth 4 -type f -name "clang" | head -n 1 || true)
-          if [ -n "$INNER_BIN" ]; then
-            INNER_ROOT=$(dirname "$(dirname "$INNER_BIN")")
-            if [ "$INNER_ROOT" != "/home/runner/theos/toolchain/linux/iphone" ]; then
-              cp -rn "$INNER_ROOT"/* ~/theos/toolchain/linux/iphone/
-            fi
+          # إذا لم يتوفر clang ضمن toolchain، نربط clang النظام كحل احتياطي لتجاوز Error 127
+          if [ ! -e "$TOOLCHAIN_BASE/bin/clang" ] && command -v clang >/dev/null 2>&1; then
+            ln -sf "$(command -v clang)" "$TOOLCHAIN_BASE/bin/clang"
           fi
 
           # تحميل وتجهيز iOS SDK
@@ -95,12 +99,13 @@ jobs:
             mv "$SDK_DIR" ~/theos/sdks/iPhoneOS8.1.sdk
           fi
 
-          ls -la ~/theos/toolchain/linux/iphone/bin/ || true
+          ls -la "$TOOLCHAIN_BASE/bin/" || true
           ls -la ~/theos/sdks/ || true
 
       - name: Build Application
         env:
           THEOS: /home/runner/theos
+          PATH: /home/runner/theos/toolchain/linux/iphone/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         run: |
           make package
           mkdir -p Payload
