@@ -12,20 +12,30 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang make zip unzip git curl build-essential
+          sudo apt-get install -y clang make zip unzip git curl wget xz-utils build-essential
           curl -fsSL https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64 -o /tmp/ldid || \
-          curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux_x86_64 -o /tmp/ldid || true
+          curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux-x86_64 -o /tmp/ldid || true
           if [ -f /tmp/ldid ]; then
             chmod +x /tmp/ldid
             sudo mv /tmp/ldid /usr/local/bin/ldid
           fi
 
-      - name: Setup Theos and iOS 8 SDK
+      - name: Setup Theos, Toolchain and iOS 8 SDK
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
+
+          # تحميل iOS Toolchain الخاص بـ Linux لكي يجد Theos مترجم clang و ld64
+          mkdir -p ~/theos/toolchain/linux/iphone
+          curl -fsSL https://github.com/CRKatri/llvm-project/releases/download/swift-5.3.2-RELEASE/swift-5.3.2-RELEASE-ubuntu20.04-iphone.tar.xz -o /tmp/toolchain.tar.xz || \
+          curl -fsSL https://github.com/kabiroberai/darwin-tools-linux/releases/download/v1.0.0/toolchain.tar.xz -o /tmp/toolchain.tar.xz
+          tar -xJf /tmp/toolchain.tar.xz -C ~/theos/toolchain/linux/iphone/
+          if [ -d ~/theos/toolchain/linux/iphone/toolchain ]; then
+            mv ~/theos/toolchain/linux/iphone/toolchain/* ~/theos/toolchain/linux/iphone/
+          fi
+
+          # تحميل وتجهيز iOS 8 SDK
           mkdir -p ~/theos/sdks
           git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/sdks-repo
-
           cd ~/sdks-repo
           for f in *iPhoneOS8* *iPhoneOS9*; do
             [ -e "$f" ] || continue
@@ -34,15 +44,10 @@ jobs:
               *.tar.xz|*.txz)  tar -xJf "$f" -C ~/theos/sdks/ ;;
               *.tar.gz|*.tgz)  tar -xzf "$f" -C ~/theos/sdks/ ;;
               *.zip)           unzip -q "$f" -d ~/theos/sdks/ ;;
-              *)
-                if [ -d "$f" ]; then
-                  cp -r "$f" ~/theos/sdks/
-                fi
-                ;;
+              *)               [ -d "$f" ] && cp -r "$f" ~/theos/sdks/ ;;
             esac
           done
 
-          # إذا لم يظهر SDK ضمن sdks، ننسخ أول SDK متاح كاحتياط
           if [ -z "$(ls -A ~/theos/sdks)" ]; then
             FIRST_SDK=$(find ~/sdks-repo -maxdepth 2 -name "*.sdk*" | head -n 1)
             if [ -n "$FIRST_SDK" ]; then
@@ -56,13 +61,13 @@ jobs:
             fi
           fi
 
-          # توحيد الاسم إلى iPhoneOS8.1.sdk إذا كان المجلد المستخرج باسم مختلف
           SDK_DIR=$(find ~/theos/sdks -maxdepth 1 -type d -name "*.sdk" | head -n 1)
           if [ -n "$SDK_DIR" ] && [ "$(basename "$SDK_DIR")" != "iPhoneOS8.1.sdk" ]; then
             mv "$SDK_DIR" ~/theos/sdks/iPhoneOS8.1.sdk
           fi
 
-          ls -la ~/theos/sdks
+          ls -la ~/theos/toolchain/linux/iphone/bin/
+          ls -la ~/theos/sdks/
 
       - name: Build Application
         env:
@@ -82,4 +87,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CatInvoice-IPA
-          path: CatInvoice_iOS8.ipa
+          path: CatInvoice_iOS8.ipa  
