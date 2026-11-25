@@ -12,9 +12,9 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang make zip unzip git curl wget xz-utils build-essential
+          sudo apt-get install -y clang make zip unzip git curl wget xz-utils bzip2 jq build-essential
           curl -fsSL https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64 -o /tmp/ldid || \
-          curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux-x86_64 -o /tmp/ldid || true
+          curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux_x86_64 -o /tmp/ldid || true
           if [ -f /tmp/ldid ]; then
             chmod +x /tmp/ldid
             sudo mv /tmp/ldid /usr/local/bin/ldid
@@ -24,16 +24,45 @@ jobs:
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
 
-          # تحميل iOS Toolchain الخاص بـ Linux لكي يجد Theos مترجم clang و ld64
           mkdir -p ~/theos/toolchain/linux/iphone
-          curl -fsSL https://github.com/CRKatri/llvm-project/releases/download/swift-5.3.2-RELEASE/swift-5.3.2-RELEASE-ubuntu20.04-iphone.tar.xz -o /tmp/toolchain.tar.xz || \
-          curl -fsSL https://github.com/kabiroberai/darwin-tools-linux/releases/download/v1.0.0/toolchain.tar.xz -o /tmp/toolchain.tar.xz
-          tar -xJf /tmp/toolchain.tar.xz -C ~/theos/toolchain/linux/iphone/
-          if [ -d ~/theos/toolchain/linux/iphone/toolchain ]; then
-            mv ~/theos/toolchain/linux/iphone/toolchain/* ~/theos/toolchain/linux/iphone/
+          TOOLCHAIN_URL=""
+
+          # البحث عن أرشيف toolchain لـ linux/iphone من أحدث إصدارات GitHub
+          for repo in "kabiroberai/darwin-tools-linux" "CRKatri/llvm-project" "theos/toolchain"; do
+            FOUND=$(curl -fsSL "https://api.github.com/repos/$repo/releases" | \
+              jq -r '.[].assets[].browser_download_url' | \
+              grep -iE "linux.*(iphone|darwin|toolchain).*\.(tar\.(xz|gz|bz2)|tgz|tbz|txz|zip)$" | head -n 1 || true)
+            if [ -n "$FOUND" ]; then
+              TOOLCHAIN_URL="$FOUND"
+              break
+            fi
+          done
+
+          echo "Selected Toolchain URL: ${TOOLCHAIN_URL:-NONE}"
+          if [ -z "$TOOLCHAIN_URL" ]; then
+            echo "Could not find a Linux iOS toolchain release asset via GitHub API."
+            exit 1
           fi
 
-          # تحميل وتجهيز iOS 8 SDK
+          curl -fL "$TOOLCHAIN_URL" -o /tmp/toolchain_archive
+
+          case "$TOOLCHAIN_URL" in
+            *.tar.xz|*.txz)  tar -xJf /tmp/toolchain_archive -C ~/theos/toolchain/linux/iphone/ ;;
+            *.tar.bz2|*.tbz) tar -xjf /tmp/toolchain_archive -C ~/theos/toolchain/linux/iphone/ ;;
+            *.tar.gz|*.tgz)  tar -xzf /tmp/toolchain_archive -C ~/theos/toolchain/linux/iphone/ ;;
+            *.zip)           unzip -q /tmp/toolchain_archive -d ~/theos/toolchain/linux/iphone/ ;;
+          esac
+
+          # إذا كان الأرشيف يحتوي مجلداً داخلياً مثل iphone أو toolchain، نرفع محتوياته لمسار ~/theos/toolchain/linux/iphone
+          INNER_BIN=$(find ~/theos/toolchain/linux/iphone -maxdepth 4 -type f -name "clang" | head -n 1 || true)
+          if [ -n "$INNER_BIN" ]; then
+            INNER_ROOT=$(dirname "$(dirname "$INNER_BIN")")
+            if [ "$INNER_ROOT" != "/home/runner/theos/toolchain/linux/iphone" ]; then
+              cp -rn "$INNER_ROOT"/* ~/theos/toolchain/linux/iphone/
+            fi
+          fi
+
+          # تحميل وتجهيز iOS SDK
           mkdir -p ~/theos/sdks
           git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/sdks-repo
           cd ~/sdks-repo
@@ -66,8 +95,8 @@ jobs:
             mv "$SDK_DIR" ~/theos/sdks/iPhoneOS8.1.sdk
           fi
 
-          ls -la ~/theos/toolchain/linux/iphone/bin/
-          ls -la ~/theos/sdks/
+          ls -la ~/theos/toolchain/linux/iphone/bin/ || true
+          ls -la ~/theos/sdks/ || true
 
       - name: Build Application
         env:
@@ -87,4 +116,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CatInvoice-IPA
-          path: CatInvoice_iOS8.ipa  
+          path: CatInvoice_iOS8.ipa
