@@ -12,13 +12,19 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang ldid zip unzip git
+          sudo apt-get install -y clang make zip unzip git curl build-essential
+          curl -fsSL https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64 -o /tmp/ldid || \
+          curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux-x86_64 -o /tmp/ldid || true
+          if [ -f /tmp/ldid ]; then
+            chmod +x /tmp/ldid
+            sudo mv /tmp/ldid /usr/local/bin/ldid
+          fi
 
       - name: Setup Theos and iOS 8 SDK
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
           mkdir -p ~/theos/sdks
-          git clone https://github.com/xybp888/iOS-SDKs.git ~/sdks-repo
+          git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/sdks-repo
           cp -r ~/sdks-repo/iPhoneOS8.1.sdk ~/theos/sdks/
 
       - name: Build Application
@@ -27,8 +33,12 @@ jobs:
         run: |
           make package
           mkdir -p Payload
-          cp -r .theos/obj/CatInvoice.app Payload/ || cp -r .theos/obj/debug/CatInvoice.app Payload/
-          ldid -S Payload/CatInvoice.app/CatInvoice
+          APP_DIR=$(find .theos -maxdepth 3 -name "CatInvoice.app" | head -n 1)
+          echo "Found app at: $APP_DIR"
+          cp -r "$APP_DIR" Payload/
+          if command -v ldid >/dev/null 2>&1; then
+            ldid -S Payload/CatInvoice.app/CatInvoice || true
+          fi
           zip -r CatInvoice_iOS8.ipa Payload
 
       - name: Upload IPA
