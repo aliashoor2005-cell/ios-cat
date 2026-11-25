@@ -1,134 +1,32 @@
 name: Build iOS 8 IPA
 
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang lld llvm make zip unzip git curl wget xz-utils bzip2 jq file build-essential
-          curl -fsSL https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64 -o /tmp/ldid || \
-          curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux_x86_64 -o /tmp/ldid || true
-          if [ -f /tmp/ldid ]; then
-            chmod +x /tmp/ldid
-            sudo mv /tmp/ldid /usr/local/bin/ldid
-          fi
+      - name: Cache iOS toolchain
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/ios-toolchain
+          key: ios-toolchain-${{ runner.os }}-${{ hashFiles('scripts/setup-toolchain.sh') }}
 
-      - name: Setup Theos, Toolchain and iOS 8 SDK
-        run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
+      - name: Set up toolchain (ld64 + libtapi + ldid + iOS 9.3 SDK)
+        run: scripts/setup-toolchain.sh ~/ios-toolchain
 
-          TOOLCHAIN_BASE="$HOME/theos/toolchain/linux/iphone"
-          mkdir -p "$TOOLCHAIN_BASE/bin" /tmp/tc_extract
-
-          TOOLCHAIN_URL=""
-          for repo in "theos/toolchain" "kabiroberai/darwin-tools-linux" "CRKatri/llvm-project"; do
-            FOUND=$(curl -fsSL "https://api.github.com/repos/$repo/releases" | \
-              jq -r '.[].assets[].browser_download_url' | \
-              grep -iE "(linux|ubuntu|x86_64).*\.(tar\.(xz|gz|bz2)|tgz|tbz|txz|zip)$" | head -n 1 || true)
-            if [ -n "$FOUND" ]; then
-              TOOLCHAIN_URL="$FOUND"
-              break
-            fi
-          done
-
-          echo "Selected Toolchain URL: ${TOOLCHAIN_URL:-NONE}"
-          if [ -n "$TOOLCHAIN_URL" ]; then
-            curl -fL "$TOOLCHAIN_URL" -o /tmp/toolchain_archive
-            case "$TOOLCHAIN_URL" in
-              *.tar.xz|*.txz)  tar -xJf /tmp/toolchain_archive -C /tmp/tc_extract || true ;;
-              *.tar.bz2|*.tbz) tar -xjf /tmp/toolchain_archive -C /tmp/tc_extract || true ;;
-              *.tar.gz|*.tgz)  tar -xzf /tmp/toolchain_archive -C /tmp/tc_extract || true ;;
-              *.zip)           unzip -qo /tmp/toolchain_archive -d /tmp/tc_extract || true ;;
-            esac
-
-            cp -rn /tmp/tc_extract/* "$TOOLCHAIN_BASE/" 2>/dev/null || true
-
-            CLANG_BIN=$(find /tmp/tc_extract "$TOOLCHAIN_BASE" -type f -name "*clang*" -executable 2>/dev/null | head -n 1 || true)
-            if [ -n "$CLANG_BIN" ]; then
-              SRC_BIN_DIR=$(dirname "$CLANG_BIN")
-              cp -rn "$SRC_BIN_DIR"/* "$TOOLCHAIN_BASE/bin/" 2>/dev/null || true
-              if [ ! -e "$TOOLCHAIN_BASE/bin/clang" ]; then
-                ln -sf "$CLANG_BIN" "$TOOLCHAIN_BASE/bin/clang"
-              fi
-            fi
-          fi
-
-          if [ ! -e "$TOOLCHAIN_BASE/bin/clang" ] && command -v clang >/dev/null 2>&1; then
-            ln -sf "$(command -v clang)" "$TOOLCHAIN_BASE/bin/clang"
-          fi
-
-          # تجهيز رابط يدعم Mach-O (ld64 / ld.lld) وتوجيه ld إليه
-          LINKER_BIN=$(find /tmp/tc_extract "$TOOLCHAIN_BASE" -type f \( -name "*ld64*" -o -name "*darwin*-ld*" -o -name "ld.lld*" \) -executable 2>/dev/null | head -n 1 || true)
-          if [ -n "$LINKER_BIN" ]; then
-            ln -sf "$LINKER_BIN" "$TOOLCHAIN_BASE/bin/ld"
-          elif command -v ld.lld >/dev/null 2>&1; then
-            cat <<'EOF' > "$TOOLCHAIN_BASE/bin/ld"
-#!/usr/bin/env bash
-exec ld.lld "$@"
-EOF
-            chmod +x "$TOOLCHAIN_BASE/bin/ld"
-          fi
-
-          # تحميل وتجهيز iOS SDK
-          mkdir -p ~/theos/sdks
-          git clone --depth=1 https://github.com/xybp888/iOS-SDKs.git ~/sdks-repo
-          cd ~/sdks-repo
-          for f in *iPhoneOS8* *iPhoneOS9*; do
-            [ -e "$f" ] || continue
-            case "$f" in
-              *.tbz|*.tar.bz2) tar -xjf "$f" -C ~/theos/sdks/ ;;
-              *.tar.xz|*.txz)  tar -xJf "$f" -C ~/theos/sdks/ ;;
-              *.tar.gz|*.tgz)  tar -xzf "$f" -C ~/theos/sdks/ ;;
-              *.zip)           unzip -q "$f" -d ~/theos/sdks/ ;;
-              *)               [ -d "$f" ] && cp -r "$f" ~/theos/sdks/ ;;
-            esac
-          done
-
-          if [ -z "$(ls -A ~/theos/sdks)" ]; then
-            FIRST_SDK=$(find ~/sdks-repo -maxdepth 2 -name "*.sdk*" | head -n 1)
-            if [ -n "$FIRST_SDK" ]; then
-              case "$FIRST_SDK" in
-                *.tbz|*.tar.bz2) tar -xjf "$FIRST_SDK" -C ~/theos/sdks/ ;;
-                *.tar.xz|*.txz)  tar -xJf "$FIRST_SDK" -C ~/theos/sdks/ ;;
-                *.tar.gz|*.tgz)  tar -xzf "$FIRST_SDK" -C ~/theos/sdks/ ;;
-                *.zip)           unzip -q "$FIRST_SDK" -d ~/theos/sdks/ ;;
-                *)               cp -r "$FIRST_SDK" ~/theos/sdks/ ;;
-              esac
-            fi
-          fi
-
-          SDK_DIR=$(find ~/theos/sdks -maxdepth 1 -type d -name "*.sdk" | head -n 1)
-          if [ -n "$SDK_DIR" ] && [ "$(basename "$SDK_DIR")" != "iPhoneOS8.1.sdk" ]; then
-            mv "$SDK_DIR" ~/theos/sdks/iPhoneOS8.1.sdk
-          fi
-
-          ls -la "$TOOLCHAIN_BASE/bin/" || true
-          ls -la ~/theos/sdks/ || true
-
-      - name: Build Application
-        env:
-          THEOS: /home/runner/theos
-          PATH: /home/runner/theos/toolchain/linux/iphone/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-        run: |
-          make package LDFLAGS="-fuse-ld=lld -Wl,-arch,armv7 -Wl,-ios_version_min,8.0"
-          mkdir -p Payload
-          APP_DIR=$(find .theos -maxdepth 3 -name "CatInvoice.app" | head -n 1)
-          echo "Found app at: $APP_DIR"
-          cp -r "$APP_DIR" Payload/
-          if command -v ldid >/dev/null 2>&1; then
-            ldid -S Payload/CatInvoice.app/CatInvoice || true
-          fi
-          zip -r CatInvoice_iOS8.ipa Payload
+      - name: Build IPA (armv7 + armv7s + arm64, iOS 8+)
+        run: ./build.sh ~/ios-toolchain
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: CatInvoice-IPA
-          path: CatInvoice_iOS8.ipa
+          path: dist/CatInvoice_iOS8.ipa
+          if-no-files-found: error

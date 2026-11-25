@@ -5,33 +5,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>نظام فواتير - Cat Printer</title>
 <style>
-  * { box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
-  body { margin: 0; background: #f3f4f6; color: #111827; padding: 12px; }
+  * { box-sizing: border-box; -webkit-box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
+  body { margin: 0; background: #f3f4f6; color: #111827; padding: 12px; -webkit-text-size-adjust: 100%; }
   .wrap { max-width: 780px; margin: 0 auto; background: #fff; padding: 14px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
   h2 { margin: 0 0 10px; font-size: 19px; }
+  h3 { margin: 0; font-size: 15px; }
   .status-bar { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 8px 10px; border-radius: 7px; font-size: 13px; margin-bottom: 12px; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  input, button { padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 14px; }
-  input { flex: 1; min-width: 130px; }
+  /* iOS 8 needs -webkit- flexbox and has no flex "gap": use margins instead */
+  .row { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -4px 10px; }
+  .row > * { margin: 0 4px 6px; }
+  input, button { padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 14px; -webkit-appearance: none; }
+  input { -webkit-flex: 1; flex: 1; min-width: 130px; }
   button { cursor: pointer; background: #2563eb; color: #fff; border: none; font-weight: bold; }
+  button:disabled { opacity: .55; }
   button.secondary { background: #4b5563; }
   button.danger { background: #dc2626; }
   button.success { background: #059669; }
+  button.small { padding: 6px 10px; font-size: 13px; }
   table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   th, td { border: 1px solid #e5e7eb; padding: 7px; text-align: center; font-size: 13px; }
   th { background: #f9fafb; }
-  .summary { margin-top: 12px; background: #f9fafb; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .summary { margin-top: 12px; background: #f9fafb; padding: 10px 12px; border-radius: 8px; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
   .total-box { font-size: 16px; font-weight: bold; color: #059669; }
-  .thermal-preview {
-    width: 260px; margin: 14px auto; padding: 10px;
-    background: #fff; border: 1px dashed #374151; font-size: 12px; line-height: 1.5;
-  }
+  .thermal-preview { width: 260px; margin: 14px auto; padding: 10px; background: #fff; border: 1px dashed #374151; font-size: 12px; line-height: 1.5; }
+
+  /* printer panel */
+  .printer { border: 1px solid #e5e7eb; border-radius: 9px; padding: 10px 12px; margin-bottom: 12px; background: #fafafa; }
+  .printer-head { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+  .printer-head > * { margin: 3px 0; }
+  .pstate { font-size: 13px; color: #374151; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; margin-left: 6px; vertical-align: middle; }
+  .dot.on { background: #059669; }
+  .dot.wait { background: #f59e0b; }
+  .devices { list-style: none; margin: 8px 0 0; padding: 0; }
+  .devices li { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; padding: 9px 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-top: 6px; background: #fff; }
+  .devices li.likely { border-color: #6ee7b7; background: #ecfdf5; }
+  .devices li.current { border-color: #059669; }
+  .dev-name { font-weight: bold; font-size: 14px; }
+  .dev-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .muted { font-size: 12px; color: #6b7280; margin-top: 6px; }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; -webkit-animation: spin .8s linear infinite; animation: spin .8s linear infinite; vertical-align: middle; margin-left: 6px; }
+  @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  label.chk { font-size: 12px; color: #374151; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h2>فاتورة مبيعات - Cat Printer (iOS 8 BLE)</h2>
+  <h2>فاتورة مبيعات</h2>
   <div class="status-bar" id="statusBar">الحالة: جاهز</div>
+
+  <div class="printer">
+    <div class="printer-head">
+      <h3>الطابعة</h3>
+      <div class="pstate"><span class="dot" id="pDot"></span><span id="pStateText">غير متصلة</span></div>
+    </div>
+    <div class="row" style="margin-top:8px;margin-bottom:0;">
+      <button id="scanBtn" onclick="toggleScan()">بحث عن الطابعات</button>
+      <button id="disconnectBtn" class="secondary" onclick="disconnectPrinter()" style="display:none;">قطع الاتصال</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="showAll" onchange="renderDevices()" style="min-width:0;-webkit-appearance:checkbox;"> إظهار كل أجهزة البلوتوث</label>
+    <ul class="devices" id="deviceList"></ul>
+    <div class="muted" id="deviceHint">شغّل الطابعة ثم اضغط «بحث عن الطابعات» واختر طابعتك من القائمة.</div>
+  </div>
 
   <div class="row">
     <input type="text" id="customerName" placeholder="اسم الزبون / الجهة">
@@ -61,13 +97,13 @@
 
   <div class="summary">
     <div>
-      <label>خصم: <input type="number" id="discount" value="0" min="0" step="any" style="width:90px" oninput="render()"></label>
+      <label>خصم: <input type="number" id="discount" value="0" min="0" step="any" style="width:90px"></label>
     </div>
     <div class="total-box">الصافي: <span id="grandTotal">0</span></div>
   </div>
 
   <div class="row" style="margin-top:12px;">
-    <button class="success" onclick="printToCatPrinter()">طباعة عبر Cat Printer</button>
+    <button class="success" id="printBtn" onclick="printToCatPrinter()">طباعة الفاتورة</button>
     <button class="secondary" onclick="saveInvoice()">حفظ محلي</button>
     <button class="danger" onclick="clearAll()">تفريغ الفاتورة</button>
   </div>
@@ -78,38 +114,64 @@
 <canvas id="printCanvas" width="384" height="400" style="display:none;"></canvas>
 
 <script>
-let items = JSON.parse(localStorage.getItem('inv_items') || '[]');
-document.getElementById('invoiceNo').value = localStorage.getItem('inv_no') || ('INV-' + Math.floor(1000 + Math.random() * 9000));
-document.getElementById('customerName').value = localStorage.getItem('inv_cust') || '';
-document.getElementById('discount').value = localStorage.getItem('inv_disc') || '0';
+// NOTE: written in ES5 on purpose — iOS 8's UIWebView does not support
+// let/const, arrow functions, template strings or the spread operator.
+var PRINT_WIDTH = 384;          // Cat Printer head width in dots
+var BYTES_PER_LINE = PRINT_WIDTH / 8;
+
+function $(id) { return document.getElementById(id); }
+
+function loadItems() {
+  try { return JSON.parse(localStorage.getItem('inv_items') || '[]') || []; }
+  catch (e) { return []; }
+}
+
+var items = loadItems();
+$('invoiceNo').value = localStorage.getItem('inv_no') || ('INV-' + Math.floor(1000 + Math.random() * 9000));
+$('customerName').value = localStorage.getItem('inv_cust') || '';
+$('discount').value = localStorage.getItem('inv_disc') || '0';
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function fmt(n) {
+  var r = Math.round(n * 100) / 100;
+  return r.toLocaleString();
+}
 
 function setStatus(msg) {
-  document.getElementById('statusBar').textContent = 'الحالة: ' + msg;
+  $('statusBar').textContent = 'الحالة: ' + msg;
 }
 
 function addItem() {
-  const name = document.getElementById('itemName').value.trim();
-  const qty = parseFloat(document.getElementById('itemQty').value) || 0;
-  const price = parseFloat(document.getElementById('itemPrice').value) || 0;
-  if (!name || qty <= 0 || price < 0) return alert('أدخل اسم المادة والكمية والسعر بشكل صحيح');
-  items.push({ name, qty, price });
-  document.getElementById('itemName').value = '';
-  document.getElementById('itemPrice').value = '';
-  saveLocal();
+  var name = $('itemName').value.replace(/^\s+|\s+$/g, '');
+  var qty = parseFloat($('itemQty').value) || 0;
+  var price = parseFloat($('itemPrice').value);
+  if (!name || qty <= 0 || isNaN(price) || price < 0) {
+    alert('أدخل اسم المادة والكمية والسعر بشكل صحيح');
+    return;
+  }
+  items.push({ name: name, qty: qty, price: price });
+  $('itemName').value = '';
+  $('itemPrice').value = '';
+  $('itemQty').value = '1';
   render();
 }
 
 function removeItem(index) {
   items.splice(index, 1);
-  saveLocal();
   render();
 }
 
 function saveLocal() {
-  localStorage.setItem('inv_items', JSON.stringify(items));
-  localStorage.setItem('inv_no', document.getElementById('invoiceNo').value);
-  localStorage.setItem('inv_cust', document.getElementById('customerName').value);
-  localStorage.getItem('inv_disc') !== null && localStorage.setItem('inv_disc', document.getElementById('discount').value);
+  try {
+    localStorage.setItem('inv_items', JSON.stringify(items));
+    localStorage.setItem('inv_no', $('invoiceNo').value);
+    localStorage.setItem('inv_cust', $('customerName').value);
+    localStorage.setItem('inv_disc', $('discount').value);
+  } catch (e) {}
 }
 
 function saveInvoice() {
@@ -120,193 +182,365 @@ function saveInvoice() {
 function clearAll() {
   if (!confirm('هل تريد تفريغ الفاتورة الحالية؟')) return;
   items = [];
-  localStorage.removeItem('inv_items');
+  $('customerName').value = '';
+  $('discount').value = '0';
+  $('invoiceNo').value = 'INV-' + Math.floor(1000 + Math.random() * 9000);
   render();
+}
+
+function totals() {
+  var subtotal = 0;
+  for (var i = 0; i < items.length; i++) subtotal += items[i].qty * items[i].price;
+  var disc = parseFloat($('discount').value) || 0;
+  return { subtotal: subtotal, disc: disc, total: Math.max(0, subtotal - disc) };
 }
 
 function render() {
   saveLocal();
-  const tbody = document.getElementById('itemsBody');
-  tbody.innerHTML = '';
-  let subtotal = 0;
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    html += '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td>' + escapeHtml(it.name) + '</td>' +
+      '<td>' + fmt(it.qty) + '</td>' +
+      '<td>' + fmt(it.price) + '</td>' +
+      '<td>' + fmt(it.qty * it.price) + '</td>' +
+      '<td><button class="danger" onclick="removeItem(' + i + ')">X</button></td>' +
+      '</tr>';
+  }
+  $('itemsBody').innerHTML = html;
 
-  items.forEach((it, idx) => {
-    const lineTotal = it.qty * it.price;
-    subtotal += lineTotal;
-    tbody.innerHTML += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${it.name}</td>
-        <td>${it.qty}</td>
-        <td>${it.price.toLocaleString()}</td>
-        <td>${lineTotal.toLocaleString()}</td>
-        <td><button class="danger" onclick="removeItem(${idx})">X</button></td>
-      </tr>`;
-  });
+  var t = totals();
+  $('grandTotal').textContent = fmt(t.total);
 
-  const disc = parseFloat(document.getElementById('discount').value) || 0;
-  const total = Math.max(0, subtotal - disc);
-  document.getElementById('grandTotal').textContent = total.toLocaleString();
+  var cust = $('customerName').value || 'زبون نقدي';
+  var invNo = $('invoiceNo').value || '-';
+  var rows = '';
+  for (var j = 0; j < items.length; j++) {
+    var x = items[j];
+    rows += '<div>' + escapeHtml(x.name) + ' (' + fmt(x.qty) + '×' + fmt(x.price) + ') = <b>' + fmt(x.qty * x.price) + '</b></div>';
+  }
 
-  const cust = document.getElementById('customerName').value || 'زبون نقدي';
-  const invNo = document.getElementById('invoiceNo').value || '-';
-  let rowsHtml = items.map(it =>
-    `<div>${it.name} (${it.qty}×${it.price}) = <b>${(it.qty*it.price).toLocaleString()}</b></div>`
-  ).join('');
-
-  document.getElementById('thermalBox').innerHTML = `
-    <div style="text-align:center;font-weight:bold;">فاتورة مبيعات</div>
-    <div>رقم: ${invNo}</div>
-    <div>الزبون: ${cust}</div>
-    <hr>
-    ${rowsHtml || '<div>لا توجد مواد</div>'}
-    <hr>
-    <div>المجموع: ${subtotal.toLocaleString()}</div>
-    <div>الخصم: ${disc.toLocaleString()}</div>
-    <div style="font-weight:bold;">الصافي: ${total.toLocaleString()}</div>
-  `;
+  $('thermalBox').innerHTML =
+    '<div style="text-align:center;font-weight:bold;">فاتورة مبيعات</div>' +
+    '<div>رقم: ' + escapeHtml(invNo) + '</div>' +
+    '<div>الزبون: ' + escapeHtml(cust) + '</div>' +
+    '<hr>' + (rows || '<div>لا توجد مواد</div>') + '<hr>' +
+    '<div>المجموع: ' + fmt(t.subtotal) + '</div>' +
+    '<div>الخصم: ' + fmt(t.disc) + '</div>' +
+    '<div style="font-weight:bold;">الصافي: ' + fmt(t.total) + '</div>';
 }
 
-// حساب CRC8 لبروتوكول Cat Printer
-function crc8(data) {
-  let crc = 0;
-  for (let i = 0; i < data.length; i++) {
-    crc ^= data[i];
-    for (let j = 0; j < 8; j++) {
-      if (crc & 0x80) {
-        crc = ((crc << 1) ^ 0x07) & 0xFF;
-      } else {
-        crc = (crc << 1) & 0xFF;
-      }
-    }
+// ---------------- Cat Printer protocol ----------------
+// Packet: 51 78 CMD 00 LEN_LO LEN_HI DATA... CRC8(DATA) FF
+var CRC8_TABLE = (function () {
+  var t = [];
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 0x80) ? ((c << 1) ^ 0x07) & 0xFF : (c << 1) & 0xFF;
+    t.push(c);
   }
+  return t;
+})();
+
+function crc8(data) {
+  var crc = 0;
+  for (var i = 0; i < data.length; i++) crc = CRC8_TABLE[(crc ^ data[i]) & 0xFF];
   return crc;
 }
 
-function makePacket(cmd, payload) {
-  const pkt = [0x51, 0x78, cmd, 0x00, payload.length & 0xFF, (payload.length >> 8) & 0xFF];
-  for (let i = 0; i < payload.length; i++) pkt.push(payload[i]);
-  pkt.push(crc8(payload));
-  pkt.push(0xFF);
-  return pkt;
+function pushPacket(out, cmd, payload) {
+  out.push(0x51, 0x78, cmd, 0x00, payload.length & 0xFF, (payload.length >> 8) & 0xFF);
+  for (var i = 0; i < payload.length; i++) out.push(payload[i] & 0xFF);
+  out.push(crc8(payload), 0xFF);
 }
 
-function renderInvoiceToCanvas() {
-  const canvas = document.getElementById('printCanvas');
-  const ctx = canvas.getContext('2d');
-  const width = 384;
-  const height = Math.max(320, 220 + items.length * 42);
-  canvas.height = height;
+var CMD_FEED      = 0xA1; // feed paper, 2 bytes little-endian (dots)
+var CMD_ROW       = 0xA2; // one bitmap row, 48 bytes, LSB = leftmost dot
+var CMD_STATE     = 0xA3; // get device state
+var CMD_QUALITY   = 0xA4; // print quality 0x31..0x35
+var CMD_LATTICE   = 0xA6; // lattice start / end
+var CMD_UPDATE    = 0xA9; // update device
+var CMD_ENERGY    = 0xAF; // print energy (darkness), 2 bytes LE
+var CMD_SPEED     = 0xBD; // print speed
+var CMD_APPLY_ENG = 0xBE; // apply energy / drawing mode
+var CMD_SET_PAPER = 0xA1;
 
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, width, height);
+var LATTICE_START = [0xAA, 0x55, 0x17, 0x38, 0x44, 0x5F, 0x5F, 0x5F, 0x44, 0x38, 0x2C];
+var LATTICE_END   = [0xAA, 0x55, 0x17, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17];
+
+// Draws right-aligned text, wrapping long lines. Returns the new y.
+function drawWrapped(ctx, text, x, y, maxWidth, lineHeight) {
+  var words = String(text).split(' ');
+  var line = '';
+  for (var i = 0; i < words.length; i++) {
+    var test = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, y);
+      y += lineHeight;
+      line = words[i];
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, y);
+  return y;
+}
+
+function drawInvoice(ctx, width) {
+  var right = width - 12, maxW = width - 24;
+  var t = totals();
+  var invNo = $('invoiceNo').value || '-';
+  var cust = $('customerName').value || 'زبون نقدي';
+  var d = new Date();
+  var dateStr = d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + '  ' +
+    ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+
   ctx.fillStyle = '#000000';
-  ctx.textAlign = 'right';
-  ctx.direction = 'rtl';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
 
-  let y = 34;
-  ctx.font = 'bold 26px Tahoma, Arial, sans-serif';
+  var y = 34;
+  ctx.font = 'bold 28px Tahoma, Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('فاتورة مبيعات', width / 2, y);
 
-  y += 32;
   ctx.textAlign = 'right';
-  ctx.font = '18px Tahoma, Arial, sans-serif';
-  const invNo = document.getElementById('invoiceNo').value || '-';
-  const cust = document.getElementById('customerName').value || 'زبون نقدي';
-  ctx.fillText('رقم الفاتورة: ' + invNo, width - 16, y);
-  y += 28;
-  ctx.fillText('الزبون: ' + cust, width - 16, y);
+  ctx.font = '20px Tahoma, Arial, sans-serif';
+  y += 34; y = drawWrapped(ctx, 'رقم الفاتورة: ' + invNo, right, y, maxW, 26);
+  y += 28; y = drawWrapped(ctx, 'الزبون: ' + cust, right, y, maxW, 26);
+  y += 28; ctx.fillText('التاريخ: ' + dateStr, right, y);
 
   y += 16;
-  ctx.beginPath();
-  ctx.moveTo(16, y);
-  ctx.lineTo(width - 16, y);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12, y); ctx.lineTo(width - 12, y); ctx.stroke();
 
-  let subtotal = 0;
-  items.forEach((it, idx) => {
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
     y += 30;
-    const lineTotal = it.qty * it.price;
-    subtotal += lineTotal;
-    ctx.font = 'bold 18px Tahoma, Arial, sans-serif';
-    ctx.fillText(`${idx + 1}. ${it.name}`, width - 16, y);
-    y += 24;
-    ctx.font = '17px Tahoma, Arial, sans-serif';
-    ctx.fillText(`${it.qty} × ${it.price} = ${lineTotal}`, width - 28, y);
-  });
+    ctx.font = 'bold 20px Tahoma, Arial, sans-serif';
+    y = drawWrapped(ctx, (i + 1) + '. ' + it.name, right, y, maxW, 26);
+    y += 26;
+    ctx.font = '19px Tahoma, Arial, sans-serif';
+    ctx.fillText(fmt(it.qty) + ' × ' + fmt(it.price) + ' = ' + fmt(it.qty * it.price), right - 14, y);
+  }
 
   y += 18;
-  ctx.beginPath();
-  ctx.moveTo(16, y);
-  ctx.lineTo(width - 16, y);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12, y); ctx.lineTo(width - 12, y); ctx.stroke();
 
-  const disc = parseFloat(document.getElementById('discount').value) || 0;
-  const total = Math.max(0, subtotal - disc);
+  ctx.font = '20px Tahoma, Arial, sans-serif';
+  y += 32; ctx.fillText('المجموع: ' + fmt(t.subtotal), right, y);
+  y += 28; ctx.fillText('الخصم: ' + fmt(t.disc), right, y);
+  y += 36;
+  ctx.font = 'bold 26px Tahoma, Arial, sans-serif';
+  ctx.fillText('الصافي: ' + fmt(t.total), right, y);
 
-  y += 30;
+  y += 36;
   ctx.font = '18px Tahoma, Arial, sans-serif';
-  ctx.fillText('المجموع: ' + subtotal, width - 16, y);
-  y += 28;
-  ctx.fillText('الخصم: ' + disc, width - 16, y);
-  y += 32;
-  ctx.font = 'bold 22px Tahoma, Arial, sans-serif';
-  ctx.fillText('الصافي: ' + total, width - 16, y);
+  ctx.textAlign = 'center';
+  ctx.fillText('شكراً لتعاملكم معنا', width / 2, y);
+  return y + 20;
+}
 
-  return { canvas, ctx, width, height };
+function renderInvoiceToCanvas() {
+  var canvas = $('printCanvas');
+  var ctx = canvas.getContext('2d');
+  // First pass on a tall canvas to measure the real height, second pass to draw.
+  canvas.width = PRINT_WIDTH;
+  canvas.height = 4000;
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PRINT_WIDTH, canvas.height);
+  var h = Math.ceil(drawInvoice(ctx, PRINT_WIDTH));
+  canvas.height = h; // resets the canvas
+  ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PRINT_WIDTH, h);
+  drawInvoice(ctx, PRINT_WIDTH);
+  return { ctx: ctx, width: PRINT_WIDTH, height: h };
+}
+
+function buildPrintJob() {
+  var r = renderInvoiceToCanvas();
+  var px = r.ctx.getImageData(0, 0, r.width, r.height).data;
+  var out = [];
+
+  pushPacket(out, CMD_STATE, [0x00]);
+  pushPacket(out, CMD_QUALITY, [0x33]);
+  pushPacket(out, CMD_ENERGY, [0xE0, 0x2E]);   // 12000: good darkness for text
+  pushPacket(out, CMD_APPLY_ENG, [0x01]);
+  pushPacket(out, CMD_UPDATE, [0x00]);
+  pushPacket(out, CMD_LATTICE, LATTICE_START);
+
+  var blankRun = 0;
+  for (var y = 0; y < r.height; y++) {
+    var line = [];
+    var any = false;
+    for (var b = 0; b < BYTES_PER_LINE; b++) {
+      var v = 0;
+      for (var bit = 0; bit < 8; bit++) {
+        var i = (y * r.width + b * 8 + bit) * 4;
+        var lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        if (px[i + 3] > 127 && lum < 150) v |= (1 << bit); // LSB = leftmost dot
+      }
+      if (v) any = true;
+      line.push(v);
+    }
+    if (!any) { blankRun++; continue; }
+    if (blankRun) { pushPacket(out, CMD_FEED, [blankRun & 0xFF, (blankRun >> 8) & 0xFF]); blankRun = 0; }
+    pushPacket(out, CMD_ROW, line);
+  }
+
+  pushPacket(out, CMD_FEED, [0x60, 0x00]);       // feed paper out so the tear bar clears the text
+  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
+  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
+  pushPacket(out, CMD_LATTICE, LATTICE_END);
+  pushPacket(out, CMD_STATE, [0x00]);
+  return out;
 }
 
 function bytesToBase64(bytes) {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i] & 0xFF);
+  var parts = [];
+  var CH = 0x2000;
+  for (var i = 0; i < bytes.length; i += CH) {
+    parts.push(String.fromCharCode.apply(null, bytes.slice(i, i + CH)));
   }
-  return btoa(binary);
+  return btoa(parts.join(''));
 }
+
+// ---------------- Native bridge ----------------
+window.__nativeQueue = [];
+var bridgeFrame = null;
+function nativeCall(cmd, extra) {
+  var c = extra || {};
+  c.cmd = cmd;
+  window.__nativeQueue.push(c);
+  if (!bridgeFrame) {
+    bridgeFrame = document.createElement('iframe');
+    bridgeFrame.style.display = 'none';
+    document.body.appendChild(bridgeFrame);
+  }
+  bridgeFrame.src = 'catprint://flush?' + new Date().getTime();
+}
+window.__flushNativeQueue = function () {
+  var q = JSON.stringify(window.__nativeQueue);
+  window.__nativeQueue = [];
+  return q;
+};
+
+// ---------------- Printer panel ----------------
+var devices = {};          // id -> {id, name, rssi, likely}
+var scanning = false;
+var printer = { state: 'none', name: '', id: '', lastId: '', bluetooth: false };
+var printing = false;
+
+function toggleScan() {
+  if (scanning) { nativeCall('stopScan'); return; }
+  devices = {};
+  renderDevices();
+  nativeCall('scan');
+}
+
+function connectPrinter(id) {
+  nativeCall('connect', { id: id });
+}
+
+function disconnectPrinter() {
+  nativeCall('disconnect');
+}
+
+function signalText(rssi) {
+  if (rssi >= -60) return 'إشارة قوية';
+  if (rssi >= -80) return 'إشارة متوسطة';
+  return 'إشارة ضعيفة';
+}
+
+function renderDevices() {
+  var showAll = $('showAll').checked;
+  var list = [];
+  for (var k in devices) if (devices.hasOwnProperty(k)) {
+    if (showAll || devices[k].likely || k === printer.id) list.push(devices[k]);
+  }
+  list.sort(function (a, b) {
+    if (a.likely !== b.likely) return a.likely ? -1 : 1;
+    return b.rssi - a.rssi;
+  });
+  var html = '';
+  for (var i = 0; i < list.length; i++) {
+    var d = list[i];
+    var isCur = d.id === printer.id;
+    var btn;
+    if (isCur && printer.state === 'connected') btn = '<button class="small secondary" disabled>متصلة ✓</button>';
+    else if (isCur && printer.state === 'connecting') btn = '<button class="small secondary" disabled>جاري الاتصال...</button>';
+    else btn = '<button class="small success" onclick="connectPrinter(\'' + d.id + '\')">اتصال</button>';
+    html += '<li class="' + (d.likely ? 'likely ' : '') + (isCur ? 'current' : '') + '">' +
+      '<div><div class="dev-name">' + escapeHtml(d.name) + '</div>' +
+      '<div class="dev-sub">' + (d.likely ? 'طابعة · ' : '') + signalText(d.rssi) + '</div></div>' + btn + '</li>';
+  }
+  $('deviceList').innerHTML = html;
+
+  var total = 0;
+  for (var t in devices) if (devices.hasOwnProperty(t)) total++;
+  var hint = '';
+  if (scanning && !list.length) hint = 'جاري البحث... تأكد أن الطابعة مشغلة وقريبة.';
+  else if (!scanning && !list.length && total) hint = 'لم يتم التعرف على طابعة. فعّل «إظهار كل أجهزة البلوتوث» واختر طابعتك يدوياً.';
+  else if (!scanning && !list.length) hint = printer.state === 'connected' ? '' : 'شغّل الطابعة ثم اضغط «بحث عن الطابعات» واختر طابعتك من القائمة.';
+  $('deviceHint').textContent = hint;
+  $('deviceHint').style.display = hint ? 'block' : 'none';
+}
+
+function renderPrinter() {
+  var dot = $('pDot'), txt = $('pStateText');
+  if (printer.state === 'connected') { dot.className = 'dot on'; txt.textContent = 'متصلة: ' + printer.name; }
+  else if (printer.state === 'connecting') { dot.className = 'dot wait'; txt.textContent = 'جاري الاتصال بـ ' + printer.name; }
+  else if (!printer.bluetooth) { dot.className = 'dot'; txt.textContent = 'البلوتوث غير مفعل'; }
+  else { dot.className = 'dot'; txt.textContent = 'غير متصلة'; }
+  $('disconnectBtn').style.display = printer.state === 'none' ? 'none' : '';
+  $('scanBtn').innerHTML = scanning ? 'إيقاف البحث<span class="spinner"></span>' : 'بحث عن الطابعات';
+  $('printBtn').disabled = printing;
+  renderDevices();
+}
+
+// Called from native code
+window.onScanState = function (on) { scanning = !!on; renderPrinter(); };
+window.onDeviceFound = function (d) { devices[d.id] = d; renderDevices(); };
+window.onPrinterState = function (st) {
+  printer = st;
+  if (st.id && st.name && !devices[st.id]) devices[st.id] = { id: st.id, name: st.name, rssi: -50, likely: true };
+  renderPrinter();
+};
+window.onPrintProgress = function (p) { setStatus('جاري الطباعة... ' + p + '%'); };
+window.onPrintDone = function (ok, msg) {
+  printing = false;
+  setStatus(msg);
+  renderPrinter();
+  if (!ok) setTimeout(function () { alert(msg); }, 0);
+};
 
 function printToCatPrinter() {
-  setStatus('جاري تجهيز صورة الفاتورة للطابعة...');
-  const { ctx, width, height } = renderInvoiceToCanvas();
-  const imgData = ctx.getImageData(0, 0, width, height).data;
-
-  const bytesPerLine = width / 8; // 48 bytes per line for 384px
-  const stream = [];
-
-  // تهيئة وطلب طباعة نقطية (Raster Print)
-  stream.push(...makePacket(0xA1, [0x00]));
-  stream.push(...makePacket(0xBE, [0x01]));
-  stream.push(...makePacket(0xA2, [0x14])); // سرعة/كثافة الطباعة
-
-  for (let row = 0; row < height; row++) {
-    const lineBytes = new Array(bytesPerLine).fill(0);
-    for (let col = 0; col < width; col++) {
-      const idx = (row * width + col) * 4;
-      const r = imgData[idx];
-      const g = imgData[idx + 1];
-      const b = imgData[idx + 2];
-      const a = imgData[idx + 3];
-      const lum = (0.299 * r + 0.587 * g + 0.114 * b) * (a / 255) + 255 * (1 - a / 255);
-      if (lum < 140) {
-        lineBytes[col >> 3] |= (0x80 >> (col & 7));
-      }
-    }
-    stream.push(...makePacket(0xA6, lineBytes));
+  if (!items.length) { alert('أضف مادة واحدة على الأقل قبل الطباعة'); return; }
+  if (printer.state === 'none' && !printer.lastId) {
+    alert('لا توجد طابعة متصلة. اضغط «بحث عن الطابعات» واختر طابعتك أولاً.');
+    return;
   }
-
-  // تغذية ورق إضافية بعد الطباعة
-  stream.push(...makePacket(0xA1, [0x28]));
-  stream.push(...makePacket(0xA1, [0x28]));
-
-  const b64 = bytesToBase64(stream);
-  window.location.href = 'catprint://' + b64;
+  printing = true;
+  renderPrinter();
+  setStatus('جاري تجهيز صورة الفاتورة للطابعة...');
+  saveLocal();
+  setTimeout(function () {
+    try {
+      nativeCall('print', { data: bytesToBase64(buildPrintJob()) });
+    } catch (e) {
+      printing = false;
+      renderPrinter();
+      setStatus('خطأ أثناء تجهيز الطباعة: ' + e.message);
+    }
+  }, 30);
 }
 
-['customerName', 'invoiceNo'].forEach(id => {
-  document.getElementById(id).addEventListener('input', render);
-});
+$('customerName').addEventListener('input', render);
+$('invoiceNo').addEventListener('input', render);
+$('discount').addEventListener('input', render);
 
 render();
+renderPrinter();
 </script>
 </body>
 </html>
