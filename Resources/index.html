@@ -121,15 +121,18 @@ var BYTES_PER_LINE = PRINT_WIDTH / 8;
 
 function $(id) { return document.getElementById(id); }
 
+function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
 function loadItems() {
-  try { return JSON.parse(localStorage.getItem('inv_items') || '[]') || []; }
+  try { return JSON.parse(storeGet('inv_items') || '[]') || []; }
   catch (e) { return []; }
 }
 
 var items = loadItems();
-$('invoiceNo').value = localStorage.getItem('inv_no') || ('INV-' + Math.floor(1000 + Math.random() * 9000));
-$('customerName').value = localStorage.getItem('inv_cust') || '';
-$('discount').value = localStorage.getItem('inv_disc') || '0';
+$('invoiceNo').value = storeGet('inv_no') || ('INV-' + Math.floor(1000 + Math.random() * 9000));
+$('customerName').value = storeGet('inv_cust') || '';
+$('discount').value = storeGet('inv_disc') || '0';
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -166,12 +169,10 @@ function removeItem(index) {
 }
 
 function saveLocal() {
-  try {
-    localStorage.setItem('inv_items', JSON.stringify(items));
-    localStorage.setItem('inv_no', $('invoiceNo').value);
-    localStorage.setItem('inv_cust', $('customerName').value);
-    localStorage.setItem('inv_disc', $('discount').value);
-  } catch (e) {}
+  storeSet('inv_items', JSON.stringify(items));
+  storeSet('inv_no', $('invoiceNo').value);
+  storeSet('inv_cust', $('customerName').value);
+  storeSet('inv_disc', $('discount').value);
 }
 
 function saveInvoice() {
@@ -435,7 +436,19 @@ function toggleScan() {
   if (scanning) { nativeCall('stopScan'); return; }
   devices = {};
   renderDevices();
+  setStatus('جاري بدء البحث...');
+  bridgeWatch = setTimeout(function () {
+    if (!scanResponded) setStatus('لم يستجب التطبيق لأمر البحث. أغلق التطبيق تماماً وافتحه من جديد.');
+  }, 2500);
+  scanResponded = false;
   nativeCall('scan');
+}
+var bridgeWatch = null, scanResponded = false;
+
+function deviceCount() {
+  var n = 0;
+  for (var k in devices) if (devices.hasOwnProperty(k)) n++;
+  return n;
 }
 
 function connectPrinter(id) {
@@ -456,10 +469,12 @@ function renderDevices() {
   var showAll = $('showAll').checked;
   var list = [];
   for (var k in devices) if (devices.hasOwnProperty(k)) {
-    if (showAll || devices[k].likely || k === printer.id) list.push(devices[k]);
+    var dv = devices[k];
+    if (k === printer.id || dv.likely || showAll) list.push(dv);
   }
   list.sort(function (a, b) {
     if (a.likely !== b.likely) return a.likely ? -1 : 1;
+    if (!a.name !== !b.name) return a.name ? -1 : 1;
     return b.rssi - a.rssi;
   });
   var html = '';
@@ -471,7 +486,7 @@ function renderDevices() {
     else if (isCur && printer.state === 'connecting') btn = '<button class="small secondary" disabled>جاري الاتصال...</button>';
     else btn = '<button class="small success" onclick="connectPrinter(\'' + d.id + '\')">اتصال</button>';
     html += '<li class="' + (d.likely ? 'likely ' : '') + (isCur ? 'current' : '') + '">' +
-      '<div><div class="dev-name">' + escapeHtml(d.name) + '</div>' +
+      '<div><div class="dev-name">' + (d.name ? escapeHtml(d.name) : 'جهاز بدون اسم (' + d.id.substr(0, 4) + ')') + '</div>' +
       '<div class="dev-sub">' + (d.likely ? 'طابعة · ' : '') + signalText(d.rssi) + '</div></div>' + btn + '</li>';
   }
   $('deviceList').innerHTML = html;
@@ -479,7 +494,8 @@ function renderDevices() {
   var total = 0;
   for (var t in devices) if (devices.hasOwnProperty(t)) total++;
   var hint = '';
-  if (scanning && !list.length) hint = 'جاري البحث... تأكد أن الطابعة مشغلة وقريبة.';
+  if (scanning && !list.length && total) hint = 'تم العثور على ' + total + ' جهاز لكن لم يتم التعرف على طابعة بعد. فعّل «إظهار كل أجهزة البلوتوث».';
+  else if (scanning && !list.length) hint = 'جاري البحث... تأكد أن الطابعة مشغلة وقريبة، وغير متصلة بتطبيق آخر.';
   else if (!scanning && !list.length && total) hint = 'لم يتم التعرف على طابعة. فعّل «إظهار كل أجهزة البلوتوث» واختر طابعتك يدوياً.';
   else if (!scanning && !list.length) hint = printer.state === 'connected' ? '' : 'شغّل الطابعة ثم اضغط «بحث عن الطابعات» واختر طابعتك من القائمة.';
   $('deviceHint').textContent = hint;
@@ -499,8 +515,15 @@ function renderPrinter() {
 }
 
 // Called from native code
-window.onScanState = function (on) { scanning = !!on; renderPrinter(); };
-window.onDeviceFound = function (d) { devices[d.id] = d; renderDevices(); };
+window.onScanState = function (on) { scanResponded = true; scanning = !!on; renderPrinter(); };
+window.onDeviceFound = function (d) {
+  var old = devices[d.id];
+  if (old && !d.name) d.name = old.name;          // keep a name we already know
+  if (old && old.likely) d.likely = true;
+  devices[d.id] = d;
+  if (scanning) setStatus('جاري البحث... تم العثور على ' + deviceCount() + ' جهاز');
+  renderDevices();
+};
 window.onPrinterState = function (st) {
   printer = st;
   if (st.id && st.name && !devices[st.id]) devices[st.id] = { id: st.id, name: st.name, rssi: -50, likely: true };

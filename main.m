@@ -155,6 +155,10 @@
     if (self.centralManager.state == CBCentralManagerStatePoweredOn) return YES;
     if (self.centralManager.state == CBCentralManagerStateUnsupported) {
         [self setStatus:@"هذا الجهاز لا يدعم بلوتوث BLE."];
+    } else if (self.centralManager.state == CBCentralManagerStateUnauthorized) {
+        [self setStatus:@"التطبيق غير مسموح له باستخدام البلوتوث. فعّل الإذن من الإعدادات > الخصوصية > البلوتوث."];
+    } else if (self.centralManager.state == CBCentralManagerStateUnknown || self.centralManager.state == CBCentralManagerStateResetting) {
+        [self setStatus:@"البلوتوث يتهيأ... انتظر ثانية ثم اضغط بحث مرة أخرى."];
     } else {
         [self setStatus:@"البلوتوث غير مفعل. شغّله من الإعدادات أو مركز التحكم."];
     }
@@ -170,17 +174,41 @@
     if (self.printerPeripheral) self.discovered[[self idOf:self.printerPeripheral]] = self.printerPeripheral;
     [self call:@"onScanState" arg:@YES];
     [self setStatus:@"جاري البحث عن الطابعات..."];
+
+    // A printer that is already connected to this iPad/iPhone (by another app,
+    // or a previous session) stops advertising, so a scan alone never finds it.
+    NSArray *services = @[[CBUUID UUIDWithString:@"AE30"], [CBUUID UUIDWithString:@"AF30"], [CBUUID UUIDWithString:@"18F0"]];
+    for (CBPeripheral *p in [self.centralManager retrieveConnectedPeripheralsWithServices:services]) {
+        [self reportPeripheral:p name:p.name rssi:-50 likely:YES];
+    }
+
     [self.centralManager scanForPeripheralsWithServices:nil
                                                 options:@{CBCentralManagerScanOptionAllowDuplicatesKey: @NO}];
     NSInteger token = ++self.scanToken;
     __weak AppDelegate *weakSelf = self;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(12 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         AppDelegate *s = weakSelf;
         if (s && s.scanning && s.scanToken == token) {
             [s stopScan];
-            [s setStatus:[s.discovered count] ? @"انتهى البحث. اختر الطابعة من القائمة." : @"لم يتم العثور على أجهزة. تأكد أن الطابعة مشغلة وقريبة."];
+            if ([s.discovered count]) {
+                [s setStatus:[NSString stringWithFormat:@"انتهى البحث: %lu جهاز. اختر الطابعة من القائمة.", (unsigned long)[s.discovered count]]];
+            } else {
+                [s setStatus:@"لم يُعثر على أي جهاز بلوتوث. أعد تشغيل الطابعة، وأغلق أي تطبيق طباعة آخر متصل بها، ثم ابحث مجدداً."];
+            }
         }
     });
+}
+
+- (void)reportPeripheral:(CBPeripheral *)peripheral name:(NSString *)name rssi:(NSInteger)rssi likely:(BOOL)likely {
+    NSString *pid = [self idOf:peripheral];
+    self.discovered[pid] = peripheral;  // must be retained or CoreBluetooth drops it
+    if (rssi == 127 || rssi == 0) rssi = -100;
+    [self call:@"onDeviceFound" arg:@{
+        @"id": pid,
+        @"name": [name length] ? name : @"",
+        @"rssi": @(rssi),
+        @"likely": @(likely)
+    }];
 }
 
 - (void)stopScan {
@@ -207,17 +235,10 @@
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
     NSString *name = advertisementData[CBAdvertisementDataLocalNameKey] ?: peripheral.name;
-    if ([name length] == 0) return;   // unnamed devices are just noise
-    NSString *pid = [self idOf:peripheral];
-    self.discovered[pid] = peripheral;  // must be retained or CoreBluetooth drops it
-    NSInteger rssi = [RSSI integerValue];
-    if (rssi == 127) rssi = -100;
-    [self call:@"onDeviceFound" arg:@{
-        @"id": pid,
-        @"name": name,
-        @"rssi": @(rssi),
-        @"likely": @([self looksLikeCatPrinter:name advertisement:advertisementData])
-    }];
+    // Unnamed devices are reported too (the page shows them under "show all"),
+    // since some printers only send their name in a later scan response.
+    [self reportPeripheral:peripheral name:name rssi:[RSSI integerValue]
+                    likely:[self looksLikeCatPrinter:name advertisement:advertisementData]];
 }
 
 #pragma mark - Connection
