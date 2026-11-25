@@ -12,7 +12,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang make zip unzip git curl wget xz-utils bzip2 jq file build-essential
+          sudo apt-get install -y clang lld llvm make zip unzip git curl wget xz-utils bzip2 jq file build-essential
           curl -fsSL https://github.com/ProcursusTeam/ldid/releases/latest/download/ldid_linux_x86_64 -o /tmp/ldid || \
           curl -fsSL https://github.com/theos/ldid/releases/latest/download/ldid-linux_x86_64 -o /tmp/ldid || true
           if [ -f /tmp/ldid ]; then
@@ -50,7 +50,6 @@ jobs:
 
             cp -rn /tmp/tc_extract/* "$TOOLCHAIN_BASE/" 2>/dev/null || true
 
-            # نقل أو ربط أي ملفات تنفيذية مثل clang / ld64 إلى مجلد bin المطلوب
             CLANG_BIN=$(find /tmp/tc_extract "$TOOLCHAIN_BASE" -type f -name "*clang*" -executable 2>/dev/null | head -n 1 || true)
             if [ -n "$CLANG_BIN" ]; then
               SRC_BIN_DIR=$(dirname "$CLANG_BIN")
@@ -61,9 +60,20 @@ jobs:
             fi
           fi
 
-          # إذا لم يتوفر clang ضمن toolchain، نربط clang النظام كحل احتياطي لتجاوز Error 127
           if [ ! -e "$TOOLCHAIN_BASE/bin/clang" ] && command -v clang >/dev/null 2>&1; then
             ln -sf "$(command -v clang)" "$TOOLCHAIN_BASE/bin/clang"
+          fi
+
+          # تجهيز رابط يدعم Mach-O (ld64 / ld.lld) وتوجيه ld إليه
+          LINKER_BIN=$(find /tmp/tc_extract "$TOOLCHAIN_BASE" -type f \( -name "*ld64*" -o -name "*darwin*-ld*" -o -name "ld.lld*" \) -executable 2>/dev/null | head -n 1 || true)
+          if [ -n "$LINKER_BIN" ]; then
+            ln -sf "$LINKER_BIN" "$TOOLCHAIN_BASE/bin/ld"
+          elif command -v ld.lld >/dev/null 2>&1; then
+            cat <<'EOF' > "$TOOLCHAIN_BASE/bin/ld"
+#!/usr/bin/env bash
+exec ld.lld "$@"
+EOF
+            chmod +x "$TOOLCHAIN_BASE/bin/ld"
           fi
 
           # تحميل وتجهيز iOS SDK
@@ -107,7 +117,7 @@ jobs:
           THEOS: /home/runner/theos
           PATH: /home/runner/theos/toolchain/linux/iphone/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         run: |
-          make package
+          make package LDFLAGS="-fuse-ld=lld -Wl,-arch,armv7 -Wl,-ios_version_min,8.0"
           mkdir -p Payload
           APP_DIR=$(find .theos -maxdepth 3 -name "CatInvoice.app" | head -n 1)
           echo "Found app at: $APP_DIR"
