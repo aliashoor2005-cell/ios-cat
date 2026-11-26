@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 #import <CoreBluetooth/CoreBluetooth.h>
+#import <sys/sysctl.h>
 
 // Cat Printer (GB01/GB02/GB03/GT01/MX...) BLE: service AE30 (some models AF30),
 // write characteristic AE01, notify characteristic AE02 — same as the Android app.
@@ -34,6 +35,8 @@
 @property (assign, nonatomic) BOOL scanning;
 @property (assign, nonatomic) NSInteger scanToken;
 @property (assign, nonatomic) BOOL pageReady;
+@property (strong, nonatomic) NSMutableDictionary *names;   // id -> best known name
+@property (assign, nonatomic) NSUInteger scanCallbacks;   // raw advertisement callbacks (diagnostics)
 @end
 
 @implementation AppDelegate
@@ -280,11 +283,55 @@
     return NO;
 }
 
+// ---- diagnostics: written to the page's event log so the user can send it ----
+- (void)diag:(NSString *)text {
+    NSLog(@"[scan] %@", text);
+    [self notify:@"diag" level:@"info" extra:@{@"text": text}];
+}
+
+- (NSString *)machine {
+    size_t size = 0;
+    sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+    if (size == 0) return @"?";
+    char *buf = malloc(size);
+    sysctlbyname("hw.machine", buf, &size, NULL, 0);
+    NSString *m = [NSString stringWithUTF8String:buf];
+    free(buf);
+    return m ?: @"?";
+}
+
+- (NSString *)stateName {
+    switch (self.centralManager.state) {
+        case CBCentralManagerStatePoweredOn: return @"PoweredOn";
+        case CBCentralManagerStatePoweredOff: return @"PoweredOff";
+        case CBCentralManagerStateUnauthorized: return @"Unauthorized";
+        case CBCentralManagerStateUnsupported: return @"Unsupported";
+        case CBCentralManagerStateResetting: return @"Resetting";
+        default: return @"Unknown";
+    }
+}
+
+- (void)showSummaryAlert:(NSString *)title message:(NSString *)msg {
+    if (self.rootVC.presentedViewController) return;
+    UIAlertController *a = [UIAlertController alertControllerWithTitle:title message:msg preferredStyle:UIAlertControllerStyleAlert];
+    [a addAction:[UIAlertAction actionWithTitle:@"حسناً" style:UIAlertActionStyleDefault handler:nil]];
+    [self.rootVC presentViewController:a animated:YES completion:nil];
+}
+
+// Search plan (16 s):
+//   0 s  printers already connected to this iPad + scan for every BLE device
+//   8 s  second scan limited to the Cat Printer services (AE30 / AF30)
+//  16 s  stop, write a summary to the log and show it on screen
 - (void)startScan {
+    [self diag:[NSString stringWithFormat:@"بدء البحث | iOS %@ | %@ | Bluetooth: %@",
+                [[UIDevice currentDevice] systemVersion], [self machine], [self stateName]]];
     if (![self bluetoothReady]) { [self call:@"onScanState" arg:@NO]; return; }
     if (self.scanning) [self.centralManager stopScan];
     self.scanning = YES;
+    self.scanCallbacks = 0;
     [self.discovered removeAllObjects];
+    if (!self.names) self.names = [NSMutableDictionary dictionary];
+    [self.names removeAllObjects];
     if (self.printerPeripheral) self.discovered[[self idOf:self.printerPeripheral]] = self.printerPeripheral;
     [self call:@"onScanState" arg:@YES];
     [self notify:@"scanning" level:@"wait"];
@@ -292,20 +339,45 @@
     // A printer already connected to this device (by another app, or earlier)
     // stops advertising, so a scan alone never finds it.
     NSArray *services = @[[CBUUID UUIDWithString:@"AE30"], [CBUUID UUIDWithString:@"AF30"], [CBUUID UUIDWithString:@"18F0"]];
-    for (CBPeripheral *p in [self.centralManager retrieveConnectedPeripheralsWithServices:services]) {
+    NSArray *connected = [self.centralManager retrieveConnectedPeripheralsWithServices:services];
+    [self diag:[NSString stringWithFormat:@"طابعات متصلة مسبقاً بهذا الجهاز: %lu", (unsigned long)[connected count]]];
+    for (CBPeripheral *p in connected) {
         [self reportPeripheral:p name:p.name rssi:-50 likely:YES];
     }
 
     [self.centralManager scanForPeripheralsWithServices:nil
-                                                options:@{CBCentralManagerScanOptionAllowDuplicatesKey: @NO}];
+                                                options:@{CBCentralManagerScanOptionAllowDuplicatesKey: @YES}];
     NSInteger token = ++self.scanToken;
     __weak AppDelegate *weakSelf = self;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+
+    for (int sec = 4; sec <= 12; sec += 4) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(sec * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            AppDelegate *s = weakSelf;
+            if (!s || !s.scanning || s.scanToken != token) return;
+            [s diag:[NSString stringWithFormat:@"بعد %d ثانية: إشارات ملتقطة %lu، أجهزة %lu",
+                     sec, (unsigned long)s.scanCallbacks, (unsigned long)[s.discovered count]]];
+            if (sec == 8) {
+                [s.centralManager stopScan];
+                [s.centralManager scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:@"AE30"], [CBUUID UUIDWithString:@"AF30"]]
+                                                         options:@{CBCentralManagerScanOptionAllowDuplicatesKey: @YES}];
+                [s diag:@"المرحلة 2: بحث مخصص لخدمة الطابعة AE30/AF30"];
+            }
+        });
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(16 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         AppDelegate *s = weakSelf;
-        if (s && s.scanning && s.scanToken == token) {
-            [s stopScan];
-            if ([s.discovered count]) [s notify:@"scan_done" level:@"info" extra:@{@"count": @([s.discovered count])}];
-            else [s notify:@"scan_none" level:@"error"];
+        if (!s || !s.scanning || s.scanToken != token) return;
+        [s stopScan];
+        NSString *summary = [NSString stringWithFormat:@"إشارات بلوتوث ملتقطة: %lu\nأجهزة مختلفة: %lu\nحالة البلوتوث: %@\niOS %@ (%@)",
+                             (unsigned long)s.scanCallbacks, (unsigned long)[s.discovered count],
+                             [s stateName], [[UIDevice currentDevice] systemVersion], [s machine]];
+        [s diag:[summary stringByReplacingOccurrencesOfString:@"\n" withString:@" | "]];
+        if ([s.discovered count]) {
+            [s notify:@"scan_done" level:@"info" extra:@{@"count": @([s.discovered count])}];
+        } else {
+            [s notify:@"scan_none" level:@"error"];
+            [s showSummaryAlert:@"نتيجة البحث" message:summary];
         }
     });
 }
@@ -318,8 +390,15 @@
 
 - (void)reportPeripheral:(CBPeripheral *)peripheral name:(NSString *)name rssi:(NSInteger)rssi likely:(BOOL)likely {
     NSString *pid = [self idOf:peripheral];
-    self.discovered[pid] = peripheral;  // must be retained or CoreBluetooth drops it
+    BOOL isNew = self.discovered[pid] == nil;
+    self.discovered[pid] = peripheral;
+    if ([name length]) self.names[pid] = name;  // must be retained or CoreBluetooth drops it
     if (rssi == 127 || rssi == 0) rssi = -100;
+    if (isNew) {
+        [self diag:[NSString stringWithFormat:@"وُجد: %@ (%@) %ld dBm%@",
+                    [name length] ? name : @"بدون اسم", [pid substringToIndex:MIN((NSUInteger)8, [pid length])],
+                    (long)rssi, likely ? @" ✓ طابعة" : @""]];
+    }
     [self call:@"onDeviceFound" arg:@{
         @"id": pid,
         @"name": [name length] ? name : @"",
@@ -344,7 +423,10 @@
 }
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
+    self.scanCallbacks++;
     NSString *name = advertisementData[CBAdvertisementDataLocalNameKey] ?: peripheral.name;
+    NSString *pid = [self idOf:peripheral];
+    if (self.discovered[pid] && !([name length] && ![self.names[pid] length])) return;   // skip repeats
     [self reportPeripheral:peripheral name:name rssi:[RSSI integerValue]
                     likely:[self looksLikeCatPrinter:name advertisement:advertisementData]];
 }

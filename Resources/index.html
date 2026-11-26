@@ -689,7 +689,7 @@ function dateStr(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/
 
 function addLog(icon, msg) {
   state.log.push({ t: timeStr(new Date()), i: icon, m: msg });
-  if (state.log.length > 150) state.log.splice(0, state.log.length - 150);
+  if (state.log.length > 300) state.log.splice(0, state.log.length - 300);
   save();
   if (currentView === 'log') renderLog();
 }
@@ -1230,6 +1230,7 @@ var EV_ALIAS = { conn_failed: 'connect_fail', conn_timeout: 'connect_timeout', c
   print_bad_data: 'bad_data' };
 function evKey(code) { return EV_ALIAS[code] || code; }
 window.onNative = function (e) {
+  if (e.code === 'diag') { addLog('🔧', e.text); return; }   // technical search log
   e.code = evKey(e.code);
   var msg = t('ev_' + e.code, { name: e.name || '', count: e.count || 0 });
   var icon = EV_ICON[e.code] || 'ℹ️';
