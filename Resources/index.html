@@ -3,410 +3,636 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>نظام فواتير - Cat Printer</title>
+<meta name="format-detection" content="telephone=no">
+<title>فاتورتي</title>
+<!--NATIVE_STORE-->
 <style>
-  * { box-sizing: border-box; -webkit-box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
-  body { margin: 0; background: #f3f4f6; color: #111827; padding: 12px; -webkit-text-size-adjust: 100%; }
-  .wrap { max-width: 780px; margin: 0 auto; background: #fff; padding: 14px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-  h2 { margin: 0 0 10px; font-size: 19px; }
-  h3 { margin: 0; font-size: 15px; }
-  .status-bar { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 8px 10px; border-radius: 7px; font-size: 13px; margin-bottom: 12px; }
-  /* iOS 8 needs -webkit- flexbox and has no flex "gap": use margins instead */
-  .row { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -4px 10px; }
-  .row > * { margin: 0 4px 6px; }
-  input, button { padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 14px; -webkit-appearance: none; }
-  input { -webkit-flex: 1; flex: 1; min-width: 130px; }
-  button { cursor: pointer; background: #2563eb; color: #fff; border: none; font-weight: bold; }
-  button:disabled { opacity: .55; }
-  button.secondary { background: #4b5563; }
-  button.danger { background: #dc2626; }
-  button.success { background: #059669; }
-  button.small { padding: 6px 10px; font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { border: 1px solid #e5e7eb; padding: 7px; text-align: center; font-size: 13px; }
-  th { background: #f9fafb; }
-  .summary { margin-top: 12px; background: #f9fafb; padding: 10px 12px; border-radius: 8px; display: -webkit-flex; display: flex; -webkit-justify-content: space-between; justify-content: space-between; -webkit-align-items: center; align-items: center; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-  .total-box { font-size: 16px; font-weight: bold; color: #059669; }
-  .thermal-preview { width: 260px; margin: 14px auto; padding: 10px; background: #fff; border: 1px dashed #374151; font-size: 12px; line-height: 1.5; }
+/* iOS 8 UIWebView: no CSS variables, no flex "gap", -webkit- prefixes needed */
+* { box-sizing: border-box; -webkit-box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
+html, body { margin: 0; padding: 0; }
+body { font-family: "Helvetica Neue", Helvetica, "Geeza Pro", Arial, sans-serif; font-size: 15px; -webkit-text-size-adjust: 100%; min-height: 100%; }
+button, input, select, textarea { font-family: inherit; font-size: 15px; }
+.tap { cursor: pointer; }
+.hidden { display: none !important; }
+.flex { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+.grow { -webkit-flex: 1; flex: 1; min-width: 0; }
+.between { -webkit-justify-content: space-between; justify-content: space-between; }
 
-  /* printer panel */
-  .printer { border: 1px solid #e5e7eb; border-radius: 9px; padding: 10px 12px; margin-bottom: 12px; background: #fafafa; }
-  .printer-head { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-  .printer-head > * { margin: 3px 0; }
-  .pstate { font-size: 13px; color: #374151; }
-  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; margin-left: 6px; vertical-align: middle; }
-  .dot.on { background: #059669; }
-  .dot.wait { background: #f59e0b; }
-  .devices { list-style: none; margin: 8px 0 0; padding: 0; }
-  .devices li { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; padding: 9px 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-top: 6px; background: #fff; }
-  .devices li.likely { border-color: #6ee7b7; background: #ecfdf5; }
-  .devices li.current { border-color: #059669; }
-  .dev-name { font-weight: bold; font-size: 14px; }
-  .dev-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
-  .muted { font-size: 12px; color: #6b7280; margin-top: 6px; }
-  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; -webkit-animation: spin .8s linear infinite; animation: spin .8s linear infinite; vertical-align: middle; margin-left: 6px; }
-  @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  label.chk { font-size: 12px; color: #374151; }
+/* ---------- theme: dark (default) ---------- */
+body { background: #121212; color: #f2f2f2; }
+.card { background: #46434e; }
+.field input, .field textarea, .inp { background: transparent; color: #f2f2f2; border: 1.5px solid #8d8a94; }
+.field label { background: #46434e; color: #c9c6cf; }
+.muted { color: #b3b0b9; }
+.sub-card { background: #2b2930; }
+.header { background: #121212; }
+.drawer { background: #121212; color: #f2f2f2; }
+.drawer .item.active { background: #2a2a2a; }
+.drawer hr, .sep { border-color: #3a3a3a; }
+.prod { background: #141414; }
+.prod .ph { background: #2b2930; color: #8d8a94; }
+.list-row { border-color: #5a5763; }
+.modal-box { background: #2b2930; color: #f2f2f2; }
+.modal-box .field label { background: #2b2930; }
+.dev { background: #46434e; border-color: #5a5763; }
+.dev.likely { border-color: #ff9800; }
+.lang-btn { border-color: #8d8a94; color: #f2f2f2; }
+.log-box { background: #1e1e1e; color: #e8e8e8; }
+.qty-btn { background: #2b2930; color: #ff9800; }
+
+/* ---------- theme: light ---------- */
+body.light { background: #f2f2f5; color: #1c1b1f; }
+body.light .card { background: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+body.light .field input, body.light .field textarea, body.light .inp { color: #1c1b1f; border-color: #b9b6c0; }
+body.light .field label { background: #ffffff; color: #5e5b66; }
+body.light .muted { color: #6b6873; }
+body.light .sub-card { background: #f2f2f5; }
+body.light .header { background: #f2f2f5; }
+body.light .drawer { background: #ffffff; color: #1c1b1f; }
+body.light .drawer .item.active { background: #f0f0f3; }
+body.light .drawer hr, body.light .sep { border-color: #e2e1e6; }
+body.light .prod { background: #f7f7f9; border: 1px solid #ececf0; }
+body.light .prod .ph { background: #ececf0; color: #9b98a3; }
+body.light .list-row { border-color: #e2e1e6; }
+body.light .modal-box { background: #ffffff; color: #1c1b1f; }
+body.light .modal-box .field label { background: #ffffff; }
+body.light .dev { background: #f7f7f9; border-color: #e2e1e6; }
+body.light .dev.likely { border-color: #ff9800; }
+body.light .lang-btn { border-color: #b9b6c0; color: #1c1b1f; }
+body.light .lang-btn.on { color: #1c1b1f; }
+body.light .log-box { background: #ffffff; color: #1c1b1f; }
+body.light .qty-btn { background: #f2f2f5; }
+
+/* ---------- layout ---------- */
+.header { position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 20; padding: 0 8px; }
+.header h1 { margin: 0; font-size: 21px; font-weight: normal; text-align: center; }
+.hbtn { width: 44px; height: 44px; line-height: 44px; text-align: center; font-size: 26px; background: none; border: none; color: inherit; padding: 0; }
+.page { padding: 64px 14px 28px; max-width: 760px; margin: 0 auto; }
+.card { border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+.card h2 { margin: 0 0 14px; font-size: 17px; font-weight: bold; }
+.page-title { font-size: 22px; font-weight: bold; margin: 10px 2px 16px; }
+
+.orange { color: #ff9800; }
+.red { color: #ef4444; }
+.green { color: #4caf50; }
+.btn { display: block; width: 100%; border: none; border-radius: 30px; padding: 15px; background: #ff9800; color: #1c1b1f; font-size: 16px; text-align: center; }
+.btn:disabled { opacity: .5; }
+.btn.small { display: inline-block; width: auto; padding: 10px 24px; font-size: 15px; }
+.btn.ghost { background: transparent; color: #ff9800; border: 1.5px solid #ff9800; }
+.mt { margin-top: 12px; }
+
+/* outlined input with floating label */
+.field { position: relative; margin-top: 14px; }
+.field input { width: 100%; border-radius: 6px; padding: 16px 14px 12px; outline: none; -webkit-appearance: none; }
+.field label { position: absolute; top: -9px; right: 12px; padding: 0 6px; font-size: 12px; }
+html[dir=ltr] .field label { right: auto; left: 12px; }
+.field input:focus, .inp:focus { border-color: #ff9800; }
+.inp { border-radius: 6px; padding: 13px 12px; outline: none; -webkit-appearance: none; width: 100%; }
+.row2 { margin: 0 -5px; }
+.row2 > * { margin-left: 5px; margin-right: 5px; }
+
+/* printer card */
+.pcard .pname { font-size: 16px; font-weight: bold; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; margin: 0 0 0 6px; vertical-align: middle; }
+html[dir=ltr] .dot { margin: 0 6px 0 0; }
+.dot.on { background: #4caf50; }
+.dot.wait { background: #ffc107; }
+.pstate { font-size: 14px; margin-top: 6px; }
+
+/* search with icon */
+.search { position: relative; }
+.search .inp { padding-left: 44px; padding-right: 14px; }
+html[dir=ltr] .search .inp { padding-left: 14px; padding-right: 44px; }
+.search .ic { position: absolute; left: 12px; top: 50%; margin-top: -12px; font-size: 20px; line-height: 24px; }
+html[dir=ltr] .search .ic { left: auto; right: 12px; }
+
+/* product grid */
+.grid { margin: 14px -4px 0; }
+.grid:after { content: ""; display: table; clear: both; }
+.prod { float: right; width: 47%; width: -webkit-calc(50% - 8px); width: calc(50% - 8px); margin: 0 4px 8px; border-radius: 14px; overflow: hidden; position: relative; text-align: center; }
+html[dir=ltr] .prod { float: left; }
+.prod .img { width: 100%; height: 0; padding-bottom: 82%; background-size: cover; background-position: center; background-color: #fff; }
+.prod .ph { width: 100%; height: 0; padding-bottom: 82%; position: relative; }
+.prod .ph span { position: absolute; top: 50%; left: 0; right: 0; margin-top: -18px; font-size: 32px; line-height: 36px; }
+.prod .nm { font-size: 16px; font-weight: bold; padding: 10px 6px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prod .pr { font-size: 16px; font-weight: bold; color: #ff9800; padding: 0 6px 12px; }
+.prod .badge { position: absolute; top: 8px; left: 8px; background: #ff9800; color: #1c1b1f; border-radius: 14px; min-width: 28px; height: 28px; line-height: 28px; font-weight: bold; font-size: 14px; padding: 0 6px; }
+html[dir=ltr] .prod .badge { left: auto; right: 8px; }
+.grid.text .prod .nm { padding-top: 18px; }
+.grid.text .prod .pr { padding-bottom: 18px; }
+.grid.list { margin: 12px 0 0; }
+.grid.list .prod { float: none; width: auto; margin: 0 0 8px; text-align: right; }
+html[dir=ltr] .grid.list .prod { text-align: left; }
+.grid.list .prod .inner { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 8px; }
+.grid.list .prod .thumb { width: 54px; height: 54px; border-radius: 10px; background-size: cover; background-position: center; background-color: #fff; margin: 0 0 0 12px; }
+html[dir=ltr] .grid.list .prod .thumb { margin: 0 12px 0 0; }
+.grid.list .prod .nm { padding: 0; }
+.grid.list .prod .pr { padding: 0; }
+.grid.list .prod .badge { position: static; display: inline-block; margin: 0 8px; }
+.empty { text-align: center; padding: 18px 8px; font-size: 14px; }
+
+/* quick add row */
+.quick { margin-top: 10px; }
+.quick .inp, .addrow .inp { margin: 0 4px; }
+.plus { font-size: 34px; line-height: 40px; width: 46px; text-align: center; background: none; border: none; color: #4caf50; padding: 0; }
+.imgpick { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; position: relative; text-align: center; line-height: 48px; font-size: 24px; background-size: cover; background-position: center; margin: 0 0 0 4px; display: block; }
+html[dir=ltr] .imgpick { margin: 0 4px 0 0; }
+.imgpick input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
+
+/* cart */
+.cart-row { padding: 10px 0; }
+.cart-row .nm { font-weight: bold; }
+.cart-row .sm { font-size: 13px; margin-top: 3px; }
+.qty-btn { width: 34px; height: 34px; border-radius: 17px; border: none; font-size: 20px; line-height: 34px; padding: 0; font-weight: bold; }
+.qty { min-width: 30px; text-align: center; font-weight: bold; }
+.total-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid; }
+.total-row .amt { font-size: 28px; font-weight: bold; color: #ff9800; }
+.invno { width: 130px; }
+.invno input { text-align: center; font-size: 18px; font-weight: bold; }
+
+/* drawer */
+.overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); z-index: 40; }
+.drawer { position: fixed; top: 0; bottom: 0; right: 0; width: 82%; max-width: 360px; z-index: 50; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  -webkit-transform: translate3d(105%,0,0); transform: translate3d(105%,0,0); -webkit-transition: -webkit-transform .25s ease; transition: transform .25s ease; padding: 28px 18px 24px; }
+html[dir=ltr] .drawer { right: auto; left: 0; -webkit-transform: translate3d(-105%,0,0); transform: translate3d(-105%,0,0); }
+.drawer.open, html[dir=ltr] .drawer.open { -webkit-transform: translate3d(0,0,0); transform: translate3d(0,0,0); }
+.drawer .brand { font-size: 30px; font-weight: bold; color: #ff9800; margin: 6px 4px 16px; }
+.drawer hr { border: none; border-top: 1px solid; margin: 10px 0; }
+.drawer .item { padding: 15px 14px; border-radius: 30px; font-size: 17px; }
+.drawer .item .ic { display: inline-block; width: 34px; font-size: 21px; text-align: center; margin: 0 0 0 10px; vertical-align: middle; }
+html[dir=ltr] .drawer .item .ic { margin: 0 10px 0 0; }
+.drawer h3 { margin: 14px 4px 10px; font-size: 16px; }
+.lang-btn { display: inline-block; border: 1.5px solid; border-radius: 12px; padding: 9px 18px; margin: 0 0 8px 8px; background: none; font-size: 15px; }
+html[dir=ltr] .lang-btn { margin: 0 8px 8px 0; }
+.lang-btn.on { background: #ff9800; border-color: #ff9800; color: #1c1b1f; }
+
+/* sliders / toggles / radios */
+.slider-label { margin: 16px 0 6px; font-size: 15px; }
+input[type=range] { -webkit-appearance: none; width: 100%; height: 34px; background: transparent; margin: 0; }
+input[type=range]::-webkit-slider-runnable-track { height: 12px; border-radius: 6px; background: #ff9800; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 34px; margin-top: -11px; border-radius: 4px; background: #ff9800; box-shadow: 0 0 0 3px rgba(255,152,0,.3); }
+.switch { position: relative; width: 58px; height: 32px; display: inline-block; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; z-index: 2; }
+.switch span { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; background: #75727c; -webkit-transition: background .2s; transition: background .2s; }
+.switch span:after { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 12px; background: #1c1b1f; -webkit-transition: -webkit-transform .2s; transition: transform .2s; }
+.switch input:checked + span { background: #ff9800; }
+.switch input:checked + span:after { -webkit-transform: translateX(26px); transform: translateX(26px); }
+.radio { padding: 18px 8px; font-size: 17px; }
+.radio .rc { width: 28px; height: 28px; border-radius: 14px; border: 3px solid #c9c6cf; margin: 0 0 0 16px; position: relative; }
+html[dir=ltr] .radio .rc { margin: 0 16px 0 0; }
+.radio.on .rc { border-color: #ff9800; }
+.radio.on .rc:after { content: ""; position: absolute; top: 4px; left: 4px; width: 14px; height: 14px; border-radius: 7px; background: #ff9800; }
+
+/* items manager */
+.list-row { padding: 14px 0; border-bottom: 1px solid; }
+.list-row:last-child { border-bottom: none; }
+.list-row .thumb { width: 52px; height: 52px; border-radius: 8px; background-size: cover; background-position: center; background-color: #fff; margin: 0 0 0 12px; text-align: center; line-height: 52px; font-size: 22px; }
+html[dir=ltr] .list-row .thumb { margin: 0 12px 0 0; }
+.list-row .t { font-size: 17px; }
+.icon-btn { background: none; border: none; font-size: 24px; width: 44px; height: 44px; padding: 0; }
+.logo-prev { width: 84px; height: 84px; background-color: #fff; border-radius: 4px; background-size: contain; background-repeat: no-repeat; background-position: center; color: #888; text-align: center; line-height: 84px; font-size: 30px; }
+.filebtn { position: relative; overflow: hidden; }
+.filebtn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
+
+/* log */
+.log-box { border-radius: 14px; padding: 12px; min-height: 300px; font-size: 14px; line-height: 1.9; }
+
+/* modal */
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 60; background: rgba(0,0,0,.6); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 40px 14px; }
+.modal-box { max-width: 460px; margin: 0 auto; border-radius: 18px; padding: 18px; }
+.modal-box h2 { margin: 0 0 12px; font-size: 18px; }
+.dev { border: 1.5px solid; border-radius: 12px; padding: 10px 12px; margin-top: 8px; }
+.dev .n { font-weight: bold; }
+.dev .s { font-size: 12px; margin-top: 2px; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #1c1b1f; border-top-color: transparent; border-radius: 50%; -webkit-animation: spin .8s linear infinite; animation: spin .8s linear infinite; vertical-align: middle; margin: 0 6px; }
+@-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chk { font-size: 14px; margin-top: 12px; display: block; }
+.company { -webkit-flex: 1; flex: 1; margin: 0 4px; padding: 14px 4px; border-radius: 14px; border: 2px solid #8d8a94; background: none; color: inherit; font-size: 16px; font-weight: bold; }
+.company.on { border-color: #ff9800; background: #ff9800; color: #1c1b1f; }
+#companyRow { margin: 0 -4px 4px; }
+.chk input { -webkit-appearance: checkbox; vertical-align: middle; margin: 0 4px; }
+
+/* toast */
+.toast { position: fixed; left: 16px; right: 16px; bottom: 24px; z-index: 80; text-align: center; }
+.toast span { display: inline-block; background: rgba(30,30,30,.95); color: #fff; border-radius: 22px; padding: 11px 18px; font-size: 14px; max-width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+canvas#printCanvas { display: none; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h2>فاتورة مبيعات</h2>
-  <div class="status-bar" id="statusBar">الحالة: جاهز</div>
 
-  <div class="printer">
-    <div class="printer-head">
-      <h3>الطابعة</h3>
-      <div class="pstate"><span class="dot" id="pDot"></span><span id="pStateText">غير متصلة</span></div>
-    </div>
-    <div class="row" style="margin-top:8px;margin-bottom:0;">
-      <button id="scanBtn" onclick="toggleScan()">بحث عن الطابعات</button>
-      <button id="disconnectBtn" class="secondary" onclick="disconnectPrinter()" style="display:none;">قطع الاتصال</button>
-    </div>
-    <label class="chk"><input type="checkbox" id="showAll" onchange="renderDevices()" style="min-width:0;-webkit-appearance:checkbox;"> إظهار كل أجهزة البلوتوث</label>
-    <ul class="devices" id="deviceList"></ul>
-    <div class="muted" id="deviceHint">شغّل الطابعة ثم اضغط «بحث عن الطابعات» واختر طابعتك من القائمة.</div>
-  </div>
-
-  <div class="row">
-    <input type="text" id="customerName" placeholder="اسم الزبون / الجهة">
-    <input type="text" id="invoiceNo" placeholder="رقم الفاتورة">
-  </div>
-
-  <div class="row">
-    <input type="text" id="itemName" placeholder="اسم المادة / الصنف">
-    <input type="number" id="itemQty" placeholder="الكمية" value="1" min="1">
-    <input type="number" id="itemPrice" placeholder="السعر" min="0" step="any">
-    <button onclick="addItem()">إضافة مادة</button>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>المادة</th>
-        <th>الكمية</th>
-        <th>السعر</th>
-        <th>المجموع</th>
-        <th>حذف</th>
-      </tr>
-    </thead>
-    <tbody id="itemsBody"></tbody>
-  </table>
-
-  <div class="summary">
-    <div>
-      <label>خصم: <input type="number" id="discount" value="0" min="0" step="any" style="width:90px"></label>
-    </div>
-    <div class="total-box">الصافي: <span id="grandTotal">0</span></div>
-  </div>
-
-  <div class="row" style="margin-top:12px;">
-    <button class="success" id="printBtn" onclick="printToCatPrinter()">طباعة الفاتورة</button>
-    <button class="secondary" onclick="saveInvoice()">حفظ محلي</button>
-    <button class="danger" onclick="clearAll()">تفريغ الفاتورة</button>
-  </div>
-
-  <div class="thermal-preview" id="thermalBox"></div>
+<!-- ======================= header ======================= -->
+<div class="header flex between" id="header">
+  <button class="hbtn tap" id="menuBtn" onclick="openDrawer()">&#9776;</button>
+  <button class="hbtn tap hidden" id="backBtn" onclick="go('home')">&#8594;</button>
+  <h1 class="grow" id="headerTitle">فاتورتي</h1>
+  <div style="width:44px"></div>
 </div>
 
-<canvas id="printCanvas" width="384" height="400" style="display:none;"></canvas>
+<!-- ======================= home ======================= -->
+<div class="page" id="v-home">
+  <div class="card pcard flex between">
+    <div class="grow">
+      <div class="pname" id="pName"></div>
+      <div class="pstate"><span class="dot" id="pDot"></span><span id="pStateText" class="red"></span></div>
+    </div>
+    <button class="btn small tap" id="connectBtn" onclick="openPrinterModal()"></button>
+  </div>
 
+  <div class="card">
+    <h2 data-t="addToOrder"></h2>
+    <div class="search">
+      <input class="inp" id="homeSearch" type="search" oninput="renderProducts()" data-ph="searchItem">
+      <span class="ic">&#128722;</span>
+    </div>
+    <div class="grid" id="prodGrid"></div>
+    <div class="quick flex">
+      <label class="imgpick tap sub-card" id="quickImg"><span>&#128247;</span><input type="file" accept="image/*" onclick="return nativePick(event,'quick')" onchange="pickImage(this, setQuickImg)"></label>
+      <input class="inp grow" id="quickName" data-ph="itemName">
+      <input class="inp" id="quickPrice" type="number" step="any" style="width:30%" data-ph="price">
+      <button class="plus tap" onclick="quickAdd()">+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex between">
+      <h2 style="margin:0"><span data-t="cart"></span> (<span id="cartCount">0</span>)</h2>
+      <button class="icon-btn tap red hidden" id="clearCartBtn" onclick="clearCart()">&#128465;</button>
+    </div>
+    <div id="cartList" class="mt"></div>
+  </div>
+
+  <div class="card">
+    <div class="field invno">
+      <input id="invoiceNo" type="number" oninput="setInvoiceNo(this.value)">
+      <label data-t="invoiceNo"></label>
+    </div>
+    <div class="total-row sep flex between">
+      <div style="font-size:18px" data-t="grandTotal"></div>
+      <div class="amt" id="grandTotal">0</div>
+    </div>
+    <button class="btn mt tap" id="printBtn" onclick="printInvoice()" data-t="print"></button>
+  </div>
+</div>
+
+<!-- ======================= invoice settings ======================= -->
+<div class="page hidden" id="v-invoice">
+  <div class="card">
+    <h2 data-t="shopDetails"></h2>
+    <div class="field"><input id="sShop" oninput="setSetting('shopName', this.value)"><label data-t="shopName"></label></div>
+    <div class="flex row2">
+      <div class="field grow"><input id="sPhone" type="tel" oninput="setSetting('phone', this.value)"><label data-t="phone"></label></div>
+      <div class="field grow"><input id="sAddress" oninput="setSetting('address', this.value)"><label data-t="address"></label></div>
+    </div>
+    <div class="field"><input id="sFooter" oninput="setSetting('footer', this.value)"><label data-t="footer"></label></div>
+  </div>
+
+  <div class="card">
+    <h2 data-t="logoFont"></h2>
+    <div class="flex">
+      <div class="logo-prev" id="logoPrev">&#127860;</div>
+      <div style="width:16px"></div>
+      <label class="btn small tap filebtn"><span data-t="chooseLogo"></span><input type="file" accept="image/*" onclick="return nativePick(event,'logo')" onchange="pickImage(this, setLogo, 384)"></label>
+      <div style="width:8px"></div>
+      <button class="btn small ghost tap hidden" id="removeLogoBtn" onclick="setLogo('')" data-t="remove"></button>
+    </div>
+    <div class="slider-label"><span data-t="logoSize"></span>: <span id="logoSizeVal"></span>%</div>
+    <input type="range" id="sLogoSize" min="50" max="200" step="10" oninput="setSetting('logoSize', +this.value)" onchange="setSetting('logoSize', +this.value)">
+    <div class="slider-label"><span data-t="fontSize"></span>: <span id="fontSizeVal"></span></div>
+    <input type="range" id="sFontSize" min="16" max="40" step="1" oninput="setSetting('fontSize', +this.value)" onchange="setSetting('fontSize', +this.value)">
+    <div class="flex between mt">
+      <div data-t="bold"></div>
+      <label class="switch"><input type="checkbox" id="sBold" onchange="setSetting('bold', this.checked)"><span></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 data-t="printerSettings"></h2>
+    <div class="slider-label"><span data-t="depth"></span>: <span id="depthVal"></span></div>
+    <input type="range" id="sDepth" min="1" max="7" step="1" oninput="setSetting('depth', +this.value)" onchange="setSetting('depth', +this.value)">
+    <h2 style="margin-top:22px" data-t="currencySection"></h2>
+    <div class="field"><input id="sCurrency" oninput="setSetting('currency', this.value)"><label data-t="currency"></label></div>
+    <button class="btn mt tap" onclick="testPrint()" data-t="testPrint"></button>
+  </div>
+</div>
+
+<!-- ======================= items manager ======================= -->
+<div class="page hidden" id="v-items">
+  <div class="card">
+    <h2 data-t="addNewItems"></h2>
+    <div class="flex addrow">
+      <label class="imgpick tap sub-card" id="mgrImg"><span>&#128247;</span><input type="file" accept="image/*" onclick="return nativePick(event,'mgr')" onchange="pickImage(this, setMgrImg)"></label>
+      <input class="inp grow" id="mgrName" data-ph="itemName">
+      <input class="inp" id="mgrPrice" type="number" step="any" style="width:30%" data-ph="price">
+      <button class="plus tap" onclick="mgrAdd()">+</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2 data-t="manageItems"></h2>
+    <input class="inp" id="mgrSearch" type="search" oninput="renderManager()" data-ph="searchItem">
+    <div id="mgrList" class="mt"></div>
+  </div>
+</div>
+
+<!-- ======================= home settings ======================= -->
+<div class="page hidden" id="v-homeset">
+  <div class="page-title" data-t="homeSettings"></div>
+  <div class="card" id="layoutCard"></div>
+</div>
+
+<!-- ======================= balance receipt ======================= -->
+<div class="page hidden" id="v-balance">
+  <div class="card">
+    <h2 data-t="balanceReceipt"></h2>
+    <div class="flex" id="companyRow"></div>
+    <div class="field"><input id="bCode" type="tel" oninput="onRechargeCode()" autocomplete="off"><label data-t="rechargeCode"></label></div>
+    <div class="field"><input id="bAmount" type="number" step="any" oninput="renderRecharge()"><label data-t="amount"></label></div>
+    <div class="muted mt" id="rechargeHint" style="font-size:13px"></div>
+    <button class="btn mt tap" id="rechargeBtn" onclick="printRecharge()" data-t="printReceiptBtn"></button>
+  </div>
+</div>
+
+<!-- ======================= log ======================= -->
+<div class="page hidden" id="v-log">
+  <div class="flex between">
+    <div class="page-title" data-t="log"></div>
+    <button class="btn small ghost tap" onclick="clearLog()" data-t="clearLog"></button>
+  </div>
+  <div class="log-box" id="logBox"></div>
+</div>
+
+<!-- ======================= drawer ======================= -->
+<div class="overlay hidden" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="brand" data-t="appName"></div>
+  <hr>
+  <div class="item tap" data-go="invoice" onclick="go('invoice')"><span class="ic">&#129534;</span><span data-t="invoiceSettings"></span></div>
+  <div class="item tap" data-go="items" onclick="go('items')"><span class="ic">&#9776;</span><span data-t="items"></span></div>
+  <div class="item tap" data-go="homeset" onclick="go('homeset')"><span class="ic">&#9881;</span><span data-t="homeSettings"></span></div>
+  <div class="item tap" data-go="balance" onclick="go('balance')"><span class="ic">&#128176;</span><span data-t="balanceReceipt"></span></div>
+  <div class="item tap" data-go="log" onclick="go('log')"><span class="ic">&#8635;</span><span data-t="log"></span></div>
+  <hr>
+  <h3 data-t="language"></h3>
+  <button class="lang-btn tap" id="lang-ar" onclick="setLang('ar')">عربي</button><button class="lang-btn tap" id="lang-en" onclick="setLang('en')">EN</button><button class="lang-btn tap" id="lang-ku" onclick="setLang('ku')">کوردی</button>
+  <div class="item tap" onclick="toggleTheme()" style="margin-top:6px"><span class="ic" id="themeIc">&#9728;</span><span id="themeTxt"></span></div>
+  <button class="btn mt tap" onclick="closeDrawer()" data-t="back"></button>
+</div>
+
+<!-- ======================= printer modal ======================= -->
+<div class="modal hidden" id="printerModal">
+  <div class="modal-box">
+    <div class="flex between">
+      <h2 style="margin:0" data-t="printers"></h2>
+      <button class="icon-btn tap" onclick="closePrinterModal()">&#10005;</button>
+    </div>
+    <div class="pstate"><span class="dot" id="mDot"></span><span id="mStateText"></span></div>
+    <button class="btn mt tap" id="scanBtn" onclick="toggleScan()"></button>
+    <button class="btn mt ghost tap hidden" id="disconnectBtn" onclick="nativeCall('disconnect')" data-t="disconnect"></button>
+    <div id="deviceList"></div>
+    <div class="muted mt" id="deviceHint" style="font-size:13px"></div>
+  </div>
+</div>
+
+<!-- ======================= edit item modal ======================= -->
+<div class="modal hidden" id="editModal">
+  <div class="modal-box">
+    <h2 data-t="editItem"></h2>
+    <div class="flex">
+      <label class="imgpick tap sub-card" id="editImg" style="width:72px;height:72px;line-height:72px"><span>&#128247;</span><input type="file" accept="image/*" onclick="return nativePick(event,'edit')" onchange="pickImage(this, setEditImg)"></label>
+      <div style="width:10px"></div>
+      <button class="btn small ghost tap" onclick="setEditImg('')" data-t="removeImage"></button>
+    </div>
+    <div class="field"><input id="editName"><label data-t="itemName"></label></div>
+    <div class="field"><input id="editPrice" type="number" step="any"><label data-t="price"></label></div>
+    <div class="flex mt">
+      <button class="btn tap grow" onclick="saveEdit()" data-t="save"></button>
+      <div style="width:10px"></div>
+      <button class="btn ghost tap grow" onclick="closeEdit()" data-t="cancel"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"><span id="toastText"></span></div>
+<canvas id="printCanvas"></canvas>
+
+<script src="qrcode.js"></script>
 <script>
-// NOTE: written in ES5 on purpose — iOS 8's UIWebView does not support
-// let/const, arrow functions, template strings or the spread operator.
+// ES5 only — iOS 8's UIWebView has no let/const, arrow functions, template
+// strings, spread, Object.assign, Array.find/includes or CSS variables.
+'use strict';
+
 var PRINT_WIDTH = 384;          // Cat Printer head width in dots
 var BYTES_PER_LINE = PRINT_WIDTH / 8;
 
 function $(id) { return document.getElementById(id); }
+function each(list, fn) { for (var i = 0; i < list.length; i++) fn(list[i], i); }
 
-function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+// ======================= i18n (ar / en / ku) =======================
+var T = {
+  appName: ['فاتورتي', 'My Invoice', 'پسوولەکەم'],
+  connect: ['ربط', 'Connect', 'پەیوەستکردن'],
+  disconnect: ['قطع الاتصال', 'Disconnect', 'پچڕاندنی پەیوەندی'],
+  notConnected: ['غير متصلة', 'Not connected', 'پەیوەست نییە'],
+  connectedTo: ['متصلة', 'Connected', 'پەیوەستە'],
+  connectingTo: ['جاري الاتصال...', 'Connecting...', 'پەیوەست دەبێت...'],
+  btOff: ['البلوتوث غير مفعل', 'Bluetooth is off', 'بلوتوز کوژاوەتەوە'],
+  printerWord: ['الطابعة', 'Printer', 'چاپکەر'],
+  addToOrder: ['إضافة للطلب', 'Add to order', 'زیادکردن بۆ داواکاری'],
+  searchItem: ['بحث عن صنف...', 'Search items...', 'گەڕان بۆ کاڵا...'],
+  itemName: ['اسم الصنف', 'Item name', 'ناوی کاڵا'],
+  price: ['السعر', 'Price', 'نرخ'],
+  cart: ['السلة', 'Cart', 'سەبەتە'],
+  cartEmpty: ['السلة فارغة', 'Cart is empty', 'سەبەتە بەتاڵە'],
+  noItems: ['لا توجد أصناف بعد. أضف صنفاً بالأسفل.', 'No items yet. Add one below.', 'هیچ کاڵایەک نییە. لە خوارەوە زیادی بکە.'],
+  noMatch: ['لا توجد نتائج', 'No results', 'هیچ ئەنجامێک نییە'],
+  invoiceNo: ['رقم الفاتورة', 'Invoice no.', 'ژمارەی پسوولە'],
+  grandTotal: ['المجموع الكلي', 'Total', 'کۆی گشتی'],
+  print: ['طباعة الفاتورة', 'Print invoice', 'چاپکردنی پسوولە'],
+  invoiceSettings: ['إعدادات الفاتورة', 'Invoice settings', 'ڕێکخستنی پسوولە'],
+  items: ['أصناف الفاتورة', 'Invoice items', 'کاڵاکانی پسوولە'],
+  homeSettings: ['إعدادات الصفحة الرئيسية', 'Home page settings', 'ڕێکخستنی پەڕەی سەرەکی'],
+  balanceReceipt: ['طباعة رصيد', 'Print recharge', 'چاپکردنی باڵانس'],
+  log: ['سجل الأحداث', 'Event log', 'تۆماری ڕووداوەکان'],
+  language: ['تغيير اللغة', 'Language', 'گۆڕینی زمان'],
+  dayMode: ['الوضع النهاري', 'Day mode', 'دۆخی ڕۆژ'],
+  nightMode: ['الوضع الليلي', 'Night mode', 'دۆخی شەو'],
+  back: ['رجوع', 'Back', 'گەڕانەوە'],
+  shopDetails: ['تفاصيل المتجر والفاتورة', 'Store & invoice details', 'وردەکاری فرۆشگا و پسوولە'],
+  shopName: ['اسم المطعم / المتجر', 'Restaurant / store name', 'ناوی چێشتخانە / فرۆشگا'],
+  address: ['العنوان', 'Address', 'ناونیشان'],
+  phone: ['رقم الهاتف', 'Phone', 'ژمارەی تەلەفۆن'],
+  footer: ['الرسالة الترحيبية (التذييل)', 'Footer message', 'پەیامی کۆتایی'],
+  logoFont: ['شعار المتجر والخط', 'Logo & font', 'لۆگۆ و فۆنت'],
+  chooseLogo: ['اختيار شعار', 'Choose logo', 'هەڵبژاردنی لۆگۆ'],
+  remove: ['حذف', 'Remove', 'لابردن'],
+  removeImage: ['حذف الصورة', 'Remove image', 'لابردنی وێنە'],
+  logoSize: ['حجم اللوجو', 'Logo size', 'قەبارەی لۆگۆ'],
+  fontSize: ['حجم الخط', 'Font size', 'قەبارەی فۆنت'],
+  bold: ['خط عريض (Bold)', 'Bold text', 'فۆنتی ئەستوور (Bold)'],
+  printerSettings: ['إعدادات الطابعة', 'Printer settings', 'ڕێکخستنی چاپکەر'],
+  depth: ['عمق الطباعة (الغمق)', 'Print darkness', 'تاریکی چاپ'],
+  currencySection: ['إدارة العملة', 'Currency', 'دراو'],
+  currency: ['العملة', 'Currency symbol', 'هێمای دراو'],
+  testPrint: ['طباعة تجريبية', 'Test print', 'چاپی تاقیکاری'],
+  addNewItems: ['إضافة أصناف جديدة للقاعدة', 'Add new items', 'زیادکردنی کاڵای نوێ'],
+  manageItems: ['البحث وإدارة الأصناف', 'Search & manage items', 'گەڕان و بەڕێوەبردنی کاڵاکان'],
+  editItem: ['تعديل الصنف', 'Edit item', 'دەستکاریکردنی کاڵا'],
+  save: ['حفظ', 'Save', 'پاشەکەوت'],
+  cancel: ['إلغاء', 'Cancel', 'هەڵوەشاندنەوە'],
+  confirmDelete: ['هل تريد حذف هذا الصنف؟', 'Delete this item?', 'ئەم کاڵایە بسڕدرێتەوە؟'],
+  confirmClear: ['تفريغ السلة؟', 'Clear the cart?', 'سەبەتە بەتاڵ بکرێتەوە؟'],
+  layoutDefault: ['الافتراضي', 'Default (list)', 'بنەڕەتی (لیست)'],
+  layoutText: ['عامودين (نص)', 'Two columns (text)', 'دوو ستوون (دەق)'],
+  layoutImage: ['عامودين (صورة)', 'Two columns (image)', 'دوو ستوون (وێنە)'],
+  printers: ['الطابعات', 'Printers', 'چاپکەرەکان'],
+  scanPrinters: ['بحث عن الطابعات', 'Search for printers', 'گەڕان بۆ چاپکەر'],
+  stopScan: ['إيقاف البحث', 'Stop searching', 'وەستاندنی گەڕان'],
+  showAll: ['إظهار كل أجهزة البلوتوث', 'Show all Bluetooth devices', 'پیشاندانی هەموو ئامێرەکانی بلوتوز'],
+  connectBtn: ['اتصال', 'Connect', 'پەیوەستکردن'],
+  connectedBtn: ['متصلة ✓', 'Connected ✓', 'پەیوەستە ✓'],
+  unnamed: ['جهاز بدون اسم', 'Unnamed device', 'ئامێری بێ ناو'],
+  likelyPrinter: ['طابعة', 'Printer', 'چاپکەر'],
+  sigStrong: ['إشارة قوية', 'Strong signal', 'ئاماژەی بەهێز'],
+  sigMid: ['إشارة متوسطة', 'Medium signal', 'ئاماژەی مامناوەند'],
+  sigWeak: ['إشارة ضعيفة', 'Weak signal', 'ئاماژەی لاواز'],
+  hintStart: ['شغّل الطابعة ثم اضغط «بحث عن الطابعات» واختر طابعتك.', 'Turn the printer on, tap "Search for printers" and pick yours.', 'چاپکەر هەڵبکە، پاشان "گەڕان بۆ چاپکەر" دابگرە و چاپکەرەکەت هەڵبژێرە.'],
+  hintSearching: ['جاري البحث... تأكد أن الطابعة مشغلة وقريبة وغير متصلة بتطبيق آخر.', 'Searching... make sure the printer is on, nearby and not connected to another app.', 'گەڕان... دڵنیابە چاپکەر هەڵکراوە، نزیکە و بە ئەپێکی تر پەیوەست نییە.'],
+  hintShowAll: ['تم العثور على أجهزة لكن لم يُتعرف على طابعة. فعّل «إظهار كل أجهزة البلوتوث».', 'Devices found but no printer recognised. Turn on "Show all Bluetooth devices".', 'ئامێر دۆزرایەوە بەڵام چاپکەر نەناسرایەوە. "پیشاندانی هەموو ئامێرەکان" چالاک بکە.'],
+  customerName: ['اسم الزبون', 'Customer name', 'ناوی کڕیار'],
+  amount: ['المبلغ', 'Amount', 'بڕی پارە'],
+  note: ['ملاحظة', 'Note', 'تێبینی'],
+  printReceiptBtn: ['طباعة الوصل', 'Print receipt', 'چاپکردنی پسوولە'],
+  receiptTitle: ['وصل رصيد', 'Balance receipt', 'پسوولەی باڵانس'],
+  clearLog: ['مسح السجل', 'Clear log', 'سڕینەوەی تۆمار'],
+  logEmpty: ['لا توجد أحداث بعد', 'No events yet', 'هێشتا هیچ ڕووداوێک نییە'],
+  invoice: ['فاتورة', 'Invoice', 'پسوولە'],
+  date: ['التاريخ', 'Date', 'بەروار'],
+  customer: ['الزبون', 'Customer', 'کڕیار'],
+  testLine: ['هذه طباعة تجريبية', 'This is a test print', 'ئەمە چاپی تاقیکارییە'],
+  sampleItem: ['صنف تجريبي', 'Sample item', 'کاڵای نموونە'],
+  defaultFooter: ['شكراً لزيارتكم!', 'Thank you for your visit!', 'سوپاس بۆ سەردانتان!'],
+  enterNamePrice: ['أدخل اسم الصنف والسعر', 'Enter item name and price', 'ناو و نرخی کاڵا بنووسە'],
+  enterAmount: ['أدخل المبلغ', 'Enter the amount', 'بڕی پارە بنووسە'],
+  cartIsEmpty: ['السلة فارغة، أضف أصنافاً أولاً', 'The cart is empty, add items first', 'سەبەتە بەتاڵە، سەرەتا کاڵا زیاد بکە'],
+  preparing: ['جاري تجهيز الطباعة...', 'Preparing print...', 'ئامادەکردنی چاپ...'],
+  printing: ['جاري الطباعة...', 'Printing...', 'چاپ دەکرێت...'],
+  imageError: ['تعذر قراءة الصورة', 'Could not read the image', 'نەتوانرا وێنەکە بخوێنرێتەوە'],
+  saved: ['تم الحفظ', 'Saved', 'پاشەکەوت کرا'],
+  rechargeCode: ['رقم الرصيد (الرمز السري)', 'Recharge code (PIN)', 'ژمارەی باڵانس (کۆدی نهێنی)'],
+  chooseCompany: ['اختر الشركة', 'Choose the company', 'کۆمپانیا هەڵبژێرە'],
+  codeTooShort: ['رقم الرصيد يجب أن يكون 10 أرقام على الأقل', 'The code must be at least 10 digits', 'کۆدەکە دەبێت لانیکەم ١٠ ژمارە بێت'],
+  secretNo: ['الرقم السري', 'PIN', 'ژمارەی نهێنی'],
+  howToTop: ['للتعبئة اضغط {p}رقم الرصيد{s}', 'To top up dial {p}PIN{s}', 'بۆ پڕکردنەوە {p}ژمارەی باڵانس{s} لێبدە'],
+  zain: ['زين', 'Zain', 'زەین'],
+  asia: ['آسياسيل', 'Asiacell', 'ئاسیاسێڵ'],
+  korek: ['كورك', 'Korek', 'کۆڕەک'],
+  ev_no_photos: ['لا يمكن الوصول لألبوم الصور', 'The photo library is not available', 'ئەلبومی وێنەکان بەردەست نییە'],
+  bridgeDead: ['لم يستجب التطبيق. أغلقه تماماً وافتحه من جديد.', 'The app did not respond. Close it fully and reopen it.', 'ئەپەکە وەڵامی نەدایەوە. بە تەواوی دایبخە و دووبارە بیکەرەوە.'],
+  // native event codes
+  ev_bt_ready: ['البلوتوث جاهز', 'Bluetooth ready', 'بلوتوز ئامادەیە'],
+  ev_bt_off: ['البلوتوث غير مفعل. شغّله من الإعدادات أو مركز التحكم.', 'Bluetooth is off. Turn it on in Settings or Control Center.', 'بلوتوز کوژاوەتەوە. لە ڕێکخستنەکان هەڵیبکە.'],
+  ev_bt_unauthorized: ['التطبيق غير مسموح له باستخدام البلوتوث. فعّل الإذن من الإعدادات > الخصوصية.', 'The app is not allowed to use Bluetooth. Enable it in Settings > Privacy.', 'ڕێگە بە ئەپەکە نەدراوە بلوتوز بەکاربهێنێت. لە ڕێکخستنەکان > تایبەتمەندی چالاکی بکە.'],
+  ev_bt_init: ['البلوتوث يتهيأ... انتظر ثانية ثم حاول مجدداً.', 'Bluetooth is starting... wait a second and try again.', 'بلوتوز دەست پێدەکات... چرکەیەک چاوەڕێ بکە.'],
+  ev_bt_unsupported: ['هذا الجهاز لا يدعم بلوتوث BLE.', 'This device does not support Bluetooth LE.', 'ئەم ئامێرە پشتگیری بلوتوز LE ناکات.'],
+  ev_scanning: ['جاري البحث عن الطابعات...', 'Searching for printers...', 'گەڕان بۆ چاپکەر...'],
+  ev_scan_done: ['انتهى البحث: {count} جهاز', 'Search finished: {count} device(s)', 'گەڕان تەواو بوو: {count} ئامێر'],
+  ev_scan_none: ['لم يُعثر على أي جهاز. أعد تشغيل الطابعة وأغلق أي تطبيق طباعة آخر.', 'No devices found. Restart the printer and close other printing apps.', 'هیچ ئامێرێک نەدۆزرایەوە. چاپکەر دووبارە هەڵبکە و ئەپی تری چاپ دابخە.'],
+  ev_connecting: ['جاري الاتصال بـ {name}...', 'Connecting to {name}...', 'پەیوەست دەبێت بە {name}...'],
+  ev_connected: ['تم الاتصال بـ {name}', 'Connected to {name}', 'پەیوەست بوو بە {name}'],
+  ev_connect_fail: ['فشل الاتصال بالطابعة', 'Could not connect to the printer', 'پەیوەستبوون بە چاپکەر سەرکەوتوو نەبوو'],
+  ev_connect_timeout: ['انتهت مهلة الاتصال', 'Connection timed out', 'کاتی پەیوەستبوون تەواو بوو'],
+  ev_connection_lost: ['انقطع الاتصال بالطابعة', 'Printer disconnected', 'پەیوەندی بە چاپکەر پچڕا'],
+  ev_disconnected: ['تم قطع الاتصال', 'Disconnected', 'پەیوەندی پچڕێنرا'],
+  ev_not_printer: ['هذا الجهاز ليس طابعة مدعومة', 'This device is not a supported printer', 'ئەم ئامێرە چاپکەرێکی پشتگیریکراو نییە'],
+  ev_no_channel: ['تعذر العثور على قناة الطباعة', 'Printing channel not found', 'کەناڵی چاپ نەدۆزرایەوە'],
+  ev_not_found: ['تعذر العثور على الطابعة، ابحث مجدداً', 'Printer not found, search again', 'چاپکەر نەدۆزرایەوە، دووبارە بگەڕێ'],
+  ev_sending: ['جاري إرسال البيانات للطابعة...', 'Sending to printer...', 'ناردن بۆ چاپکەر...'],
+  ev_printed: ['تمت الطباعة بنجاح', 'Printed successfully', 'بە سەرکەوتوویی چاپ کرا'],
+  ev_print_lost: ['انقطع الاتصال أثناء الطباعة', 'Disconnected while printing', 'لە کاتی چاپدا پەیوەندی پچڕا'],
+  ev_busy: ['الطابعة مشغولة، انتظر قليلاً', 'Printer is busy, please wait', 'چاپکەر سەرقاڵە، چاوەڕێ بکە'],
+  ev_bad_data: ['تعذر تجهيز بيانات الطباعة', 'Could not prepare print data', 'نەتوانرا داتای چاپ ئامادە بکرێت'],
+  ev_no_printer: ['لا توجد طابعة متصلة. اضغط «ربط» واختر طابعتك أولاً.', 'No printer connected. Tap "Connect" and pick your printer first.', 'هیچ چاپکەرێک پەیوەست نییە. سەرەتا "پەیوەستکردن" دابگرە.']
+};
+var LANGS = ['ar', 'en', 'ku'];
+var EV_ICON = {
+  bt_ready: '🔵', scanning: '🔍', scan_done: '🔍', connecting: '⏳', connected: '✅', printed: '🖨️',
+  sending: '📤', disconnected: '⚪', bt_off: '🛑', bt_unauthorized: '🛑', bt_init: '⏳', no_photos: '⚠️', bt_unsupported: '🛑',
+  scan_none: '⚠️', connect_fail: '🛑', connect_timeout: '🛑', connection_lost: '🛑', not_printer: '🛑',
+  no_channel: '🛑', not_found: '⚠️', print_lost: '🛑', busy: '⚠️', bad_data: '🛑', no_printer: '⚠️'
+};
 
-function loadItems() {
-  try { return JSON.parse(storeGet('inv_items') || '[]') || []; }
-  catch (e) { return []; }
+function t(key, vars) {
+  var row = T[key];
+  var s = row ? (row[LANGS.indexOf(state.lang)] || row[0]) : key;
+  if (vars) for (var k in vars) if (vars.hasOwnProperty(k)) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
 }
 
-var items = loadItems();
-$('invoiceNo').value = storeGet('inv_no') || ('INV-' + Math.floor(1000 + Math.random() * 9000));
-$('customerName').value = storeGet('inv_cust') || '';
-$('discount').value = storeGet('inv_disc') || '0';
+// ======================= state & storage =======================
+var DEFAULT_STATE = {
+  v: 1,
+  lang: 'ar',
+  theme: 'dark',
+  layout: 'image2',
+  invoiceNo: 1,
+  items: [],      // {id, name, price, img}
+  cart: [],       // {id, qty}
+  log: [],        // {t, i, m}
+  settings: { shopName: '', address: '', phone: '', footer: '', logo: '', logoSize: 100, fontSize: 24, bold: true, depth: 7, currency: 'د.ع' },
+  company: 'asia'
+};
 
-function escapeHtml(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function readStore(key) {
+  try {
+    if (window.__nativeStore && window.__nativeStore[key]) return JSON.parse(window.__nativeStore[key]);
+    return JSON.parse(localStorage.getItem('fatorati_' + key) || 'null');
+  } catch (e) { return null; }
 }
 
-function fmt(n) {
-  var r = Math.round(n * 100) / 100;
-  return r.toLocaleString();
-}
-
-function setStatus(msg) {
-  $('statusBar').textContent = 'الحالة: ' + msg;
-}
-
-function addItem() {
-  var name = $('itemName').value.replace(/^\s+|\s+$/g, '');
-  var qty = parseFloat($('itemQty').value) || 0;
-  var price = parseFloat($('itemPrice').value);
-  if (!name || qty <= 0 || isNaN(price) || price < 0) {
-    alert('أدخل اسم المادة والكمية والسعر بشكل صحيح');
-    return;
+function loadState() {
+  var s = readStore('state'), media = readStore('media');
+  if (s && media) { s.items = media.items || []; if (s.settings) s.settings.logo = media.logo || ''; }
+  var st = clone(DEFAULT_STATE);
+  if (!s) {   // first launch: a few sample items
+    st.items = [
+      { id: 'd1', name: 'كباب', price: 6000, img: '' },
+      { id: 'd2', name: 'دجاج شوي', price: 15000, img: '' },
+      { id: 'd3', name: 'شاورما دجاج', price: 6000, img: '' },
+      { id: 'd4', name: 'فنكر', price: 1000, img: '' }
+    ];
   }
-  items.push({ name: name, qty: qty, price: price });
-  $('itemName').value = '';
-  $('itemPrice').value = '';
-  $('itemQty').value = '1';
-  render();
-}
-
-function removeItem(index) {
-  items.splice(index, 1);
-  render();
-}
-
-function saveLocal() {
-  storeSet('inv_items', JSON.stringify(items));
-  storeSet('inv_no', $('invoiceNo').value);
-  storeSet('inv_cust', $('customerName').value);
-  storeSet('inv_disc', $('discount').value);
-}
-
-function saveInvoice() {
-  saveLocal();
-  setStatus('تم حفظ بيانات الفاتورة محلياً.');
-}
-
-function clearAll() {
-  if (!confirm('هل تريد تفريغ الفاتورة الحالية؟')) return;
-  items = [];
-  $('customerName').value = '';
-  $('discount').value = '0';
-  $('invoiceNo').value = 'INV-' + Math.floor(1000 + Math.random() * 9000);
-  render();
-}
-
-function totals() {
-  var subtotal = 0;
-  for (var i = 0; i < items.length; i++) subtotal += items[i].qty * items[i].price;
-  var disc = parseFloat($('discount').value) || 0;
-  return { subtotal: subtotal, disc: disc, total: Math.max(0, subtotal - disc) };
-}
-
-function render() {
-  saveLocal();
-  var html = '';
-  for (var i = 0; i < items.length; i++) {
-    var it = items[i];
-    html += '<tr>' +
-      '<td>' + (i + 1) + '</td>' +
-      '<td>' + escapeHtml(it.name) + '</td>' +
-      '<td>' + fmt(it.qty) + '</td>' +
-      '<td>' + fmt(it.price) + '</td>' +
-      '<td>' + fmt(it.qty * it.price) + '</td>' +
-      '<td><button class="danger" onclick="removeItem(' + i + ')">X</button></td>' +
-      '</tr>';
+  if (s && typeof s === 'object') {
+    for (var k in s) if (s.hasOwnProperty(k) && k !== 'settings') st[k] = s[k];
+    if (s.settings) for (var j in s.settings) if (s.settings.hasOwnProperty(j)) st.settings[j] = s.settings[j];
   }
-  $('itemsBody').innerHTML = html;
-
-  var t = totals();
-  $('grandTotal').textContent = fmt(t.total);
-
-  var cust = $('customerName').value || 'زبون نقدي';
-  var invNo = $('invoiceNo').value || '-';
-  var rows = '';
-  for (var j = 0; j < items.length; j++) {
-    var x = items[j];
-    rows += '<div>' + escapeHtml(x.name) + ' (' + fmt(x.qty) + '×' + fmt(x.price) + ') = <b>' + fmt(x.qty * x.price) + '</b></div>';
-  }
-
-  $('thermalBox').innerHTML =
-    '<div style="text-align:center;font-weight:bold;">فاتورة مبيعات</div>' +
-    '<div>رقم: ' + escapeHtml(invNo) + '</div>' +
-    '<div>الزبون: ' + escapeHtml(cust) + '</div>' +
-    '<hr>' + (rows || '<div>لا توجد مواد</div>') + '<hr>' +
-    '<div>المجموع: ' + fmt(t.subtotal) + '</div>' +
-    '<div>الخصم: ' + fmt(t.disc) + '</div>' +
-    '<div style="font-weight:bold;">الصافي: ' + fmt(t.total) + '</div>';
+  return st;
 }
 
-// ---------------- Cat Printer protocol ----------------
-// Packet: 51 78 CMD 00 LEN_LO LEN_HI DATA... CRC8(DATA) FF
-var CRC8_TABLE = (function () {
-  var t = [];
-  for (var i = 0; i < 256; i++) {
-    var c = i;
-    for (var j = 0; j < 8; j++) c = (c & 0x80) ? ((c << 1) ^ 0x07) & 0xFF : (c << 1) & 0xFF;
-    t.push(c);
-  }
-  return t;
-})();
-
-function crc8(data) {
-  var crc = 0;
-  for (var i = 0; i < data.length; i++) crc = CRC8_TABLE[(crc ^ data[i]) & 0xFF];
-  return crc;
+var state = loadState();
+var saveTimer = null, lastMedia = null;
+// Items (with their pictures) and the logo are big, so they are stored apart
+// and only re-written when they change. Native store = Documents folder.
+function storeWrite(key, json) {
+  if (window.__isNative) nativeCall('save', { key: key, value: json });
+  else { try { localStorage.setItem('fatorati_' + key, json); } catch (e) {} }
+}
+function save() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    saveTimer = null;
+    var media = JSON.stringify({ items: state.items, logo: state.settings.logo });
+    if (media !== lastMedia) { storeWrite('media', media); lastMedia = media; }
+    var light = {};
+    for (var k in state) if (state.hasOwnProperty(k) && k !== 'items' && k !== 'settings') light[k] = state[k];
+    light.settings = {};
+    for (var j in state.settings) if (state.settings.hasOwnProperty(j) && j !== 'logo') light.settings[j] = state.settings[j];
+    storeWrite('state', JSON.stringify(light));
+  }, 400);
 }
 
-function pushPacket(out, cmd, payload) {
-  out.push(0x51, 0x78, cmd, 0x00, payload.length & 0xFF, (payload.length >> 8) & 0xFF);
-  for (var i = 0; i < payload.length; i++) out.push(payload[i] & 0xFF);
-  out.push(crc8(payload), 0xFF);
-}
-
-var CMD_FEED      = 0xA1; // feed paper, 2 bytes little-endian (dots)
-var CMD_ROW       = 0xA2; // one bitmap row, 48 bytes, LSB = leftmost dot
-var CMD_STATE     = 0xA3; // get device state
-var CMD_QUALITY   = 0xA4; // print quality 0x31..0x35
-var CMD_LATTICE   = 0xA6; // lattice start / end
-var CMD_UPDATE    = 0xA9; // update device
-var CMD_ENERGY    = 0xAF; // print energy (darkness), 2 bytes LE
-var CMD_SPEED     = 0xBD; // print speed
-var CMD_APPLY_ENG = 0xBE; // apply energy / drawing mode
-var CMD_SET_PAPER = 0xA1;
-
-var LATTICE_START = [0xAA, 0x55, 0x17, 0x38, 0x44, 0x5F, 0x5F, 0x5F, 0x44, 0x38, 0x2C];
-var LATTICE_END   = [0xAA, 0x55, 0x17, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17];
-
-// Draws right-aligned text, wrapping long lines. Returns the new y.
-function drawWrapped(ctx, text, x, y, maxWidth, lineHeight) {
-  var words = String(text).split(' ');
-  var line = '';
-  for (var i = 0; i < words.length; i++) {
-    var test = line ? line + ' ' + words[i] : words[i];
-    if (ctx.measureText(test).width > maxWidth && line) {
-      ctx.fillText(line, x, y);
-      y += lineHeight;
-      line = words[i];
-    } else {
-      line = test;
-    }
-  }
-  if (line) ctx.fillText(line, x, y);
-  return y;
-}
-
-function drawInvoice(ctx, width) {
-  var right = width - 12, maxW = width - 24;
-  var t = totals();
-  var invNo = $('invoiceNo').value || '-';
-  var cust = $('customerName').value || 'زبون نقدي';
-  var d = new Date();
-  var dateStr = d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + '  ' +
-    ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-
-  ctx.fillStyle = '#000000';
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 2;
-
-  var y = 34;
-  ctx.font = 'bold 28px Tahoma, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('فاتورة مبيعات', width / 2, y);
-
-  ctx.textAlign = 'right';
-  ctx.font = '20px Tahoma, Arial, sans-serif';
-  y += 34; y = drawWrapped(ctx, 'رقم الفاتورة: ' + invNo, right, y, maxW, 26);
-  y += 28; y = drawWrapped(ctx, 'الزبون: ' + cust, right, y, maxW, 26);
-  y += 28; ctx.fillText('التاريخ: ' + dateStr, right, y);
-
-  y += 16;
-  ctx.beginPath(); ctx.moveTo(12, y); ctx.lineTo(width - 12, y); ctx.stroke();
-
-  for (var i = 0; i < items.length; i++) {
-    var it = items[i];
-    y += 30;
-    ctx.font = 'bold 20px Tahoma, Arial, sans-serif';
-    y = drawWrapped(ctx, (i + 1) + '. ' + it.name, right, y, maxW, 26);
-    y += 26;
-    ctx.font = '19px Tahoma, Arial, sans-serif';
-    ctx.fillText(fmt(it.qty) + ' × ' + fmt(it.price) + ' = ' + fmt(it.qty * it.price), right - 14, y);
-  }
-
-  y += 18;
-  ctx.beginPath(); ctx.moveTo(12, y); ctx.lineTo(width - 12, y); ctx.stroke();
-
-  ctx.font = '20px Tahoma, Arial, sans-serif';
-  y += 32; ctx.fillText('المجموع: ' + fmt(t.subtotal), right, y);
-  y += 28; ctx.fillText('الخصم: ' + fmt(t.disc), right, y);
-  y += 36;
-  ctx.font = 'bold 26px Tahoma, Arial, sans-serif';
-  ctx.fillText('الصافي: ' + fmt(t.total), right, y);
-
-  y += 36;
-  ctx.font = '18px Tahoma, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('شكراً لتعاملكم معنا', width / 2, y);
-  return y + 20;
-}
-
-function renderInvoiceToCanvas() {
-  var canvas = $('printCanvas');
-  var ctx = canvas.getContext('2d');
-  // First pass on a tall canvas to measure the real height, second pass to draw.
-  canvas.width = PRINT_WIDTH;
-  canvas.height = 4000;
-  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PRINT_WIDTH, canvas.height);
-  var h = Math.ceil(drawInvoice(ctx, PRINT_WIDTH));
-  canvas.height = h; // resets the canvas
-  ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PRINT_WIDTH, h);
-  drawInvoice(ctx, PRINT_WIDTH);
-  return { ctx: ctx, width: PRINT_WIDTH, height: h };
-}
-
-function buildPrintJob() {
-  var r = renderInvoiceToCanvas();
-  var px = r.ctx.getImageData(0, 0, r.width, r.height).data;
-  var out = [];
-
-  pushPacket(out, CMD_STATE, [0x00]);
-  pushPacket(out, CMD_QUALITY, [0x33]);
-  pushPacket(out, CMD_ENERGY, [0xE0, 0x2E]);   // 12000: good darkness for text
-  pushPacket(out, CMD_APPLY_ENG, [0x01]);
-  pushPacket(out, CMD_UPDATE, [0x00]);
-  pushPacket(out, CMD_LATTICE, LATTICE_START);
-
-  var blankRun = 0;
-  for (var y = 0; y < r.height; y++) {
-    var line = [];
-    var any = false;
-    for (var b = 0; b < BYTES_PER_LINE; b++) {
-      var v = 0;
-      for (var bit = 0; bit < 8; bit++) {
-        var i = (y * r.width + b * 8 + bit) * 4;
-        var lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-        if (px[i + 3] > 127 && lum < 150) v |= (1 << bit); // LSB = leftmost dot
-      }
-      if (v) any = true;
-      line.push(v);
-    }
-    if (!any) { blankRun++; continue; }
-    if (blankRun) { pushPacket(out, CMD_FEED, [blankRun & 0xFF, (blankRun >> 8) & 0xFF]); blankRun = 0; }
-    pushPacket(out, CMD_ROW, line);
-  }
-
-  pushPacket(out, CMD_FEED, [0x60, 0x00]);       // feed paper out so the tear bar clears the text
-  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
-  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
-  pushPacket(out, CMD_LATTICE, LATTICE_END);
-  pushPacket(out, CMD_STATE, [0x00]);
-  return out;
-}
-
-function bytesToBase64(bytes) {
-  var parts = [];
-  var CH = 0x2000;
-  for (var i = 0; i < bytes.length; i += CH) {
-    parts.push(String.fromCharCode.apply(null, bytes.slice(i, i + CH)));
-  }
-  return btoa(parts.join(''));
-}
-
-// ---------------- Native bridge ----------------
+// ======================= native bridge =======================
 window.__nativeQueue = [];
 var bridgeFrame = null;
 function nativeCall(cmd, extra) {
@@ -426,24 +652,515 @@ window.__flushNativeQueue = function () {
   return q;
 };
 
-// ---------------- Printer panel ----------------
-var devices = {};          // id -> {id, name, rssi, likely}
-var scanning = false;
-var printer = { state: 'none', name: '', id: '', lastId: '', bluetooth: false };
+// ======================= helpers =======================
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function trim(s) { return String(s || '').replace(/^\s+|\s+$/g, ''); }
+
+function fmtNum(n) {
+  n = Math.round((+n || 0) * 100) / 100;
+  var neg = n < 0; n = Math.abs(n);
+  var parts = String(n).split('.');
+  var ip = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (neg ? '-' : '') + ip + (parts[1] ? '.' + parts[1] : '');
+}
+function money(n) { return fmtNum(n) + ' ' + (state.settings.currency || ''); }
+
+function uid() { return 'i' + new Date().getTime().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
+
+function itemById(id) {
+  for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i];
+  return null;
+}
+
+var toastTimer = null;
+function toast(msg, ms) {
+  $('toastText').textContent = msg;
+  $('toast').className = 'toast';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { $('toast').className = 'toast hidden'; }, ms || 2600);
+}
+
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function timeStr(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+function dateStr(d) { return d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) + '  ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+
+function addLog(icon, msg) {
+  state.log.push({ t: timeStr(new Date()), i: icon, m: msg });
+  if (state.log.length > 150) state.log.splice(0, state.log.length - 150);
+  save();
+  if (currentView === 'log') renderLog();
+}
+
+// ======================= navigation =======================
+var currentView = 'home';
+var VIEW_TITLES = { home: 'appName', invoice: 'invoiceSettings', items: 'items', homeset: 'homeSettings', balance: 'balanceReceipt', log: 'log' };
+
+function go(view) {
+  closeDrawer();
+  currentView = view;
+  for (var v in VIEW_TITLES) if (VIEW_TITLES.hasOwnProperty(v)) {
+    $('v-' + v).className = 'page' + (v === view ? '' : ' hidden');
+  }
+  $('menuBtn').className = 'hbtn tap' + (view === 'home' ? '' : ' hidden');
+  $('backBtn').className = 'hbtn tap' + (view === 'home' ? ' hidden' : '');
+  $('headerTitle').textContent = t(VIEW_TITLES[view]);
+  each(document.querySelectorAll('.drawer .item[data-go]'), function (el) {
+    el.className = 'item tap' + (el.getAttribute('data-go') === view ? ' active' : '');
+  });
+  if (view === 'home') renderHome();
+  if (view === 'invoice') renderInvoiceSettings();
+  if (view === 'items') renderManager();
+  if (view === 'homeset') renderLayoutCard();
+  if (view === 'log') renderLog();
+  if (view === 'balance') renderRecharge();
+  window.scrollTo(0, 0);
+}
+
+function openDrawer() {
+  $('overlay').className = 'overlay';
+  $('drawer').className = 'drawer open';
+}
+function closeDrawer() {
+  $('overlay').className = 'overlay hidden';
+  $('drawer').className = 'drawer';
+}
+
+// ======================= language & theme =======================
+function applyTexts() {
+  document.documentElement.dir = state.lang === 'en' ? 'ltr' : 'rtl';
+  document.documentElement.lang = state.lang;
+  $('backBtn').innerHTML = state.lang === 'en' ? '&#8592;' : '&#8594;';
+  each(document.querySelectorAll('[data-t]'), function (el) { el.textContent = t(el.getAttribute('data-t')); });
+  each(document.querySelectorAll('[data-ph]'), function (el) { el.setAttribute('placeholder', t(el.getAttribute('data-ph'))); });
+  each(LANGS, function (l) { $('lang-' + l).className = 'lang-btn tap' + (state.lang === l ? ' on' : ''); });
+  $('headerTitle').textContent = t(VIEW_TITLES[currentView]);
+  applyTheme();
+}
+
+function setLang(l) {
+  state.lang = l;
+  save();
+  applyTexts();
+  go(currentView);
+  renderPrinter();
+}
+
+function applyTheme() {
+  document.body.className = state.theme === 'light' ? 'light' : '';
+  if (window.__isNative) nativeCall('theme', { dark: state.theme !== 'light' });
+  // the menu entry offers the *other* mode
+  $('themeTxt').textContent = state.theme === 'light' ? t('nightMode') : t('dayMode');
+  $('themeIc').innerHTML = state.theme === 'light' ? '&#9790;' : '&#9728;';
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  save();
+  applyTheme();
+}
+
+// ======================= images =======================
+// Reads a picked photo, fixes EXIF rotation and the iOS <= 8 large-JPEG
+// canvas subsampling bug, then downsizes it to a small JPEG data URL.
+function readExifOrientation(buf) {
+  try {
+    var v = new DataView(buf);
+    if (v.getUint16(0) !== 0xFFD8) return 1;
+    var off = 2, len = v.byteLength;
+    while (off < len - 4) {
+      var marker = v.getUint16(off);
+      off += 2;
+      if (marker === 0xFFE1) {
+        if (v.getUint32(off + 2) !== 0x45786966) return 1;
+        var tiff = off + 8;
+        var little = v.getUint16(tiff) === 0x4949;
+        var ifd = tiff + v.getUint32(tiff + 4, little);
+        var n = v.getUint16(ifd, little);
+        for (var i = 0; i < n; i++) {
+          var e = ifd + 2 + i * 12;
+          if (v.getUint16(e, little) === 0x0112) return v.getUint16(e + 8, little);
+        }
+        return 1;
+      } else if ((marker & 0xFF00) !== 0xFF00) {
+        return 1;
+      } else {
+        off += v.getUint16(off);
+      }
+    }
+  } catch (err) {}
+  return 1;
+}
+
+function detectSubsampling(img) {
+  var w = img.naturalWidth, h = img.naturalHeight;
+  if (w * h > 1024 * 1024) {
+    var c = document.createElement('canvas'); c.width = c.height = 1;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, -w + 1, 0);
+    return ctx.getImageData(0, 0, 1, 1).data[3] === 0;
+  }
+  return false;
+}
+
+function detectVerticalSquash(img, ih) {
+  var c = document.createElement('canvas'); c.width = 1; c.height = ih;
+  var ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  var data = ctx.getImageData(0, 0, 1, ih).data;
+  var sy = 0, ey = ih, py = ih;
+  while (py > sy) {
+    if (data[(py - 1) * 4 + 3] === 0) ey = py; else sy = py;
+    py = (ey + sy) >> 1;
+  }
+  var ratio = py / ih;
+  return ratio === 0 ? 1 : ratio;
+}
+
+function processImage(img, orientation, maxSize, cb) {
+  var iw = img.naturalWidth, ih = img.naturalHeight;
+  if (detectSubsampling(img)) { iw /= 2; ih /= 2; }
+  var squash = detectVerticalSquash(img, ih);
+  var scale = Math.min(1, maxSize / Math.max(iw, ih));
+  var w = Math.max(1, Math.round(iw * scale)), h = Math.max(1, Math.round(ih * scale));
+  var swap = orientation >= 5 && orientation <= 8;
+  var c = document.createElement('canvas');
+  c.width = swap ? h : w; c.height = swap ? w : h;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, c.width, c.height);
+  switch (orientation) {
+    case 2: ctx.transform(-1, 0, 0, 1, w, 0); break;
+    case 3: ctx.transform(-1, 0, 0, -1, w, h); break;
+    case 4: ctx.transform(1, 0, 0, -1, 0, h); break;
+    case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+    case 6: ctx.transform(0, 1, -1, 0, h, 0); break;
+    case 7: ctx.transform(0, -1, -1, 0, h, w); break;
+    case 8: ctx.transform(0, -1, 1, 0, 0, w); break;
+  }
+  ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, w, h / squash);
+  cb(c.toDataURL('image/jpeg', 0.8));
+}
+
+function pickImage(input, cb, maxSize) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var size = maxSize || 300;
+  var r1 = new FileReader();
+  r1.onload = function () {
+    var orientation = readExifOrientation(r1.result);
+    var r2 = new FileReader();
+    r2.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        try { processImage(img, orientation, size, cb); } catch (e) { toast(t('imageError')); }
+      };
+      img.onerror = function () { toast(t('imageError')); };
+      img.src = r2.result;
+    };
+    r2.readAsDataURL(file);
+  };
+  r1.onerror = function () { toast(t('imageError')); };
+  r1.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+// In the app the native photo picker is used: it fixes rotation and resizes.
+function nativePick(ev, target) {
+  if (!window.__isNative) return true;
+  if (ev && ev.preventDefault) ev.preventDefault();
+  nativeCall('pickImage', { target: target });
+  return false;
+}
+window.onImagePicked = function (r) {
+  var fn = { quick: setQuickImg, mgr: setMgrImg, edit: setEditImg, logo: setLogo }[r.target];
+  if (fn) fn(r.data);
+};
+
+function showPickPreview(el, img) {
+  el.style.backgroundImage = img ? 'url(' + img + ')' : '';
+  el.firstChild.style.visibility = img ? 'hidden' : 'visible';
+}
+
+// ======================= home =======================
+var quickImg = '', mgrImg = '';
+function setQuickImg(img) { quickImg = img; showPickPreview($('quickImg'), img); }
+function setMgrImg(img) { mgrImg = img; showPickPreview($('mgrImg'), img); }
+
+function addItem(name, price, img) {
+  name = trim(name);
+  price = parseFloat(price);
+  if (!name || isNaN(price) || price < 0) { toast(t('enterNamePrice')); return false; }
+  state.items.push({ id: uid(), name: name, price: price, img: img || '' });
+  save();
+  return true;
+}
+
+function quickAdd() {
+  if (!addItem($('quickName').value, $('quickPrice').value, quickImg)) return;
+  $('quickName').value = ''; $('quickPrice').value = '';
+  setQuickImg('');
+  renderProducts();
+}
+
+function cartQty(id) {
+  for (var i = 0; i < state.cart.length; i++) if (state.cart[i].id === id) return state.cart[i].qty;
+  return 0;
+}
+
+function addToCart(id) {
+  for (var i = 0; i < state.cart.length; i++) {
+    if (state.cart[i].id === id) { state.cart[i].qty++; save(); renderHome(); return; }
+  }
+  state.cart.push({ id: id, qty: 1 });
+  save();
+  renderHome();
+}
+
+function changeQty(id, d) {
+  for (var i = 0; i < state.cart.length; i++) {
+    if (state.cart[i].id === id) {
+      state.cart[i].qty += d;
+      if (state.cart[i].qty <= 0) state.cart.splice(i, 1);
+      break;
+    }
+  }
+  save();
+  renderHome();
+}
+
+function clearCart() {
+  if (!state.cart.length || !confirm(t('confirmClear'))) return;
+  state.cart = [];
+  save();
+  renderHome();
+}
+
+function cartLines() {
+  var out = [];
+  for (var i = 0; i < state.cart.length; i++) {
+    var c = state.cart[i], it = itemById(c.id);
+    if (it) out.push({ id: it.id, name: it.name, price: it.price, qty: c.qty, total: it.price * c.qty });
+  }
+  return out;
+}
+
+function cartTotal() {
+  var s = 0, lines = cartLines();
+  for (var i = 0; i < lines.length; i++) s += lines[i].total;
+  return s;
+}
+
+function setInvoiceNo(v) {
+  var n = parseInt(v, 10);
+  if (!isNaN(n) && n > 0) { state.invoiceNo = n; save(); }
+}
+
+function renderProducts() {
+  var q = ($('homeSearch').value || '').toLowerCase();
+  var layout = state.layout;
+  var grid = $('prodGrid');
+  grid.className = 'grid' + (layout === 'list' ? ' list' : layout === 'text2' ? ' text' : '');
+  var html = '', shown = 0;
+  for (var i = 0; i < state.items.length; i++) {
+    var it = state.items[i];
+    if (q && it.name.toLowerCase().indexOf(q) < 0) continue;
+    shown++;
+    var qty = cartQty(it.id);
+    var badge = qty ? '<span class="badge">' + qty + '</span>' : '';
+    var bg = it.img ? ' style="background-image:url(' + it.img + ')"' : '';
+    if (layout === 'list') {
+      html += '<div class="prod tap" onclick="addToCart(\'' + it.id + '\')"><div class="inner">' +
+        '<div class="thumb"' + bg + '></div>' +
+        '<div class="grow"><div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + escapeHtml(money(it.price)) + '</div></div>' +
+        badge + '</div></div>';
+    } else {
+      var pic = '';
+      if (layout === 'image2') pic = it.img ? '<div class="img"' + bg + '></div>' : '<div class="ph"><span>&#127869;</span></div>';
+      html += '<div class="prod tap" onclick="addToCart(\'' + it.id + '\')">' + pic +
+        '<div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + escapeHtml(money(it.price)) + '</div>' + badge + '</div>';
+    }
+  }
+  if (!shown) html = '<div class="empty muted">' + (state.items.length ? t('noMatch') : t('noItems')) + '</div>';
+  grid.innerHTML = html;
+}
+
+function renderCart() {
+  var lines = cartLines();
+  var count = 0;
+  for (var i = 0; i < lines.length; i++) count += lines[i].qty;
+  $('cartCount').textContent = count;
+  $('clearCartBtn').className = 'icon-btn tap red' + (lines.length ? '' : ' hidden');
+  if (!lines.length) {
+    $('cartList').innerHTML = '<div class="empty muted">' + t('cartEmpty') + '</div>';
+  } else {
+    var html = '';
+    for (var j = 0; j < lines.length; j++) {
+      var l = lines[j];
+      html += '<div class="cart-row list-row flex">' +
+        '<div class="grow"><div class="nm">' + escapeHtml(l.name) + '</div>' +
+        '<div class="sm muted">' + escapeHtml(money(l.price)) + ' × ' + l.qty + ' = <b class="orange">' + escapeHtml(money(l.total)) + '</b></div></div>' +
+        '<button class="qty-btn tap" onclick="changeQty(\'' + l.id + '\',1)">+</button>' +
+        '<div class="qty">' + l.qty + '</div>' +
+        '<button class="qty-btn tap" onclick="changeQty(\'' + l.id + '\',-1)">&minus;</button></div>';
+    }
+    $('cartList').innerHTML = html;
+  }
+  $('grandTotal').textContent = money(cartTotal());
+  if (document.activeElement !== $('invoiceNo')) $('invoiceNo').value = state.invoiceNo;
+}
+
+function renderHome() {
+  renderProducts();
+  renderCart();
+}
+
+// ======================= items manager =======================
+function mgrAdd() {
+  if (!addItem($('mgrName').value, $('mgrPrice').value, mgrImg)) return;
+  $('mgrName').value = ''; $('mgrPrice').value = '';
+  setMgrImg('');
+  toast(t('saved'));
+  renderManager();
+}
+
+function renderManager() {
+  var q = ($('mgrSearch').value || '').toLowerCase();
+  var html = '';
+  for (var i = 0; i < state.items.length; i++) {
+    var it = state.items[i];
+    if (q && it.name.toLowerCase().indexOf(q) < 0) continue;
+    html += '<div class="list-row flex">' +
+      '<div class="thumb"' + (it.img ? ' style="background-image:url(' + it.img + ')">' : '>&#127869;') + '</div>' +
+      '<div class="grow t">' + escapeHtml(it.name) + ' - ' + escapeHtml(money(it.price)) + '</div>' +
+      '<button class="icon-btn tap orange" onclick="openEdit(\'' + it.id + '\')">&#9881;</button>' +
+      '<button class="icon-btn tap red" onclick="deleteItem(\'' + it.id + '\')">&#128465;</button></div>';
+  }
+  $('mgrList').innerHTML = html || '<div class="empty muted">' + (state.items.length ? t('noMatch') : t('noItems')) + '</div>';
+}
+
+function deleteItem(id) {
+  if (!confirm(t('confirmDelete'))) return;
+  for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) { state.items.splice(i, 1); break; }
+  for (var j = 0; j < state.cart.length; j++) if (state.cart[j].id === id) { state.cart.splice(j, 1); break; }
+  save();
+  renderManager();
+}
+
+var editId = null, editImg = '';
+function setEditImg(img) { editImg = img; showPickPreview($('editImg'), img); }
+function openEdit(id) {
+  var it = itemById(id);
+  if (!it) return;
+  editId = id;
+  $('editName').value = it.name;
+  $('editPrice').value = it.price;
+  setEditImg(it.img || '');
+  $('editModal').className = 'modal';
+}
+function closeEdit() { $('editModal').className = 'modal hidden'; editId = null; }
+function saveEdit() {
+  var it = itemById(editId);
+  if (!it) { closeEdit(); return; }
+  var name = trim($('editName').value);
+  var price = parseFloat($('editPrice').value);
+  if (!name || isNaN(price) || price < 0) { toast(t('enterNamePrice')); return; }
+  it.name = name; it.price = price; it.img = editImg;
+  save();
+  closeEdit();
+  renderManager();
+}
+
+// ======================= invoice settings =======================
+function setSetting(key, val) {
+  state.settings[key] = val;
+  save();
+  if (key === 'logoSize') $('logoSizeVal').textContent = val;
+  if (key === 'fontSize') $('fontSizeVal').textContent = val;
+  if (key === 'depth') $('depthVal').textContent = val;
+}
+
+function setLogo(img) {
+  setSetting('logo', img);
+  renderLogo();
+}
+
+function renderLogo() {
+  var lg = state.settings.logo;
+  $('logoPrev').style.backgroundImage = lg ? 'url(' + lg + ')' : '';
+  $('logoPrev').innerHTML = lg ? '' : '&#127860;';
+  $('removeLogoBtn').className = 'btn small ghost tap' + (lg ? '' : ' hidden');
+}
+
+function renderInvoiceSettings() {
+  var s = state.settings;
+  $('sShop').value = s.shopName; $('sPhone').value = s.phone; $('sAddress').value = s.address;
+  $('sFooter').value = s.footer; $('sFooter').setAttribute('placeholder', t('defaultFooter'));
+  $('sLogoSize').value = s.logoSize; $('logoSizeVal').textContent = s.logoSize;
+  $('sFontSize').value = s.fontSize; $('fontSizeVal').textContent = s.fontSize;
+  $('sBold').checked = !!s.bold;
+  $('sDepth').value = s.depth; $('depthVal').textContent = s.depth;
+  $('sCurrency').value = s.currency;
+  renderLogo();
+}
+
+// ======================= home layout =======================
+function renderLayoutCard() {
+  var opts = [['list', 'layoutDefault'], ['text2', 'layoutText'], ['image2', 'layoutImage']];
+  var html = '';
+  each(opts, function (o) {
+    html += '<div class="radio flex tap' + (state.layout === o[0] ? ' on' : '') + '" onclick="setLayout(\'' + o[0] + '\')">' +
+      '<div class="rc"></div><div>' + t(o[1]) + '</div></div>';
+  });
+  $('layoutCard').innerHTML = html;
+}
+function setLayout(l) { state.layout = l; save(); renderLayoutCard(); }
+
+// ======================= log =======================
+function renderLog() {
+  var html = '';
+  for (var i = state.log.length - 1; i >= 0; i--) {
+    var e = state.log[i];
+    html += '<div>[' + e.t + '] ' + e.i + ' ' + escapeHtml(e.m) + '</div>';
+  }
+  $('logBox').innerHTML = html || '<div class="muted">' + t('logEmpty') + '</div>';
+}
+function clearLog() { state.log = []; save(); renderLog(); }
+
+// ======================= printer =======================
+var devices = {};
+var scanning = false, scanResponded = false;
+var printer = { state: 'none', name: '', id: '', lastId: '', bluetooth: true };
 var printing = false;
+
+function openPrinterModal() {
+  $('printerModal').className = 'modal';
+  renderPrinter();
+  if (printer.state !== 'connected' && !scanning) toggleScan();
+}
+function closePrinterModal() {
+  $('printerModal').className = 'modal hidden';
+  if (scanning) nativeCall('stopScan');
+}
 
 function toggleScan() {
   if (scanning) { nativeCall('stopScan'); return; }
   devices = {};
+  if (printer.id) devices[printer.id] = { id: printer.id, name: printer.name, rssi: -50, likely: true };
   renderDevices();
-  setStatus('جاري بدء البحث...');
-  bridgeWatch = setTimeout(function () {
-    if (!scanResponded) setStatus('لم يستجب التطبيق لأمر البحث. أغلق التطبيق تماماً وافتحه من جديد.');
-  }, 2500);
   scanResponded = false;
+  setTimeout(function () { if (!scanResponded) toast(t('bridgeDead'), 4000); }, 2500);
   nativeCall('scan');
 }
-var bridgeWatch = null, scanResponded = false;
+
+function connectDevice(id) { nativeCall('connect', { id: id }); }
+
+function signalText(rssi) {
+  if (rssi >= -60) return t('sigStrong');
+  if (rssi >= -80) return t('sigMid');
+  return t('sigWeak');
+}
 
 function deviceCount() {
   var n = 0;
@@ -451,118 +1168,424 @@ function deviceCount() {
   return n;
 }
 
-function connectPrinter(id) {
-  nativeCall('connect', { id: id });
-}
-
-function disconnectPrinter() {
-  nativeCall('disconnect');
-}
-
-function signalText(rssi) {
-  if (rssi >= -60) return 'إشارة قوية';
-  if (rssi >= -80) return 'إشارة متوسطة';
-  return 'إشارة ضعيفة';
-}
-
 function renderDevices() {
-  var showAll = $('showAll').checked;
   var list = [];
-  for (var k in devices) if (devices.hasOwnProperty(k)) {
-    var dv = devices[k];
-    if (k === printer.id || dv.likely || showAll) list.push(dv);
-  }
+  for (var k in devices) if (devices.hasOwnProperty(k)) list.push(devices[k]);
   list.sort(function (a, b) {
     if (a.likely !== b.likely) return a.likely ? -1 : 1;
     if (!a.name !== !b.name) return a.name ? -1 : 1;
     return b.rssi - a.rssi;
   });
   var html = '';
-  for (var i = 0; i < list.length; i++) {
-    var d = list[i];
-    var isCur = d.id === printer.id;
+  each(list, function (d) {
+    var cur = d.id === printer.id;
     var btn;
-    if (isCur && printer.state === 'connected') btn = '<button class="small secondary" disabled>متصلة ✓</button>';
-    else if (isCur && printer.state === 'connecting') btn = '<button class="small secondary" disabled>جاري الاتصال...</button>';
-    else btn = '<button class="small success" onclick="connectPrinter(\'' + d.id + '\')">اتصال</button>';
-    html += '<li class="' + (d.likely ? 'likely ' : '') + (isCur ? 'current' : '') + '">' +
-      '<div><div class="dev-name">' + (d.name ? escapeHtml(d.name) : 'جهاز بدون اسم (' + d.id.substr(0, 4) + ')') + '</div>' +
-      '<div class="dev-sub">' + (d.likely ? 'طابعة · ' : '') + signalText(d.rssi) + '</div></div>' + btn + '</li>';
-  }
+    if (cur && printer.state === 'connected') btn = '<button class="btn small tap" disabled>' + t('connectedBtn') + '</button>';
+    else if (cur && printer.state === 'connecting') btn = '<button class="btn small tap" disabled><span class="spinner"></span></button>';
+    else btn = '<button class="btn small tap" onclick="connectDevice(\'' + d.id + '\')">' + t('connectBtn') + '</button>';
+    html += '<div class="dev flex between' + (d.likely ? ' likely' : '') + '">' +
+      '<div class="grow"><div class="n">' + (d.name ? escapeHtml(d.name) : t('unnamed') + ' (' + d.id.substr(0, 4) + ')') + '</div>' +
+      '<div class="s muted">' + (d.likely ? t('likelyPrinter') + ' · ' : '') + signalText(d.rssi) + '</div></div>' + btn + '</div>';
+  });
   $('deviceList').innerHTML = html;
-
-  var total = 0;
-  for (var t in devices) if (devices.hasOwnProperty(t)) total++;
-  var hint = '';
-  if (scanning && !list.length && total) hint = 'تم العثور على ' + total + ' جهاز لكن لم يتم التعرف على طابعة بعد. فعّل «إظهار كل أجهزة البلوتوث».';
-  else if (scanning && !list.length) hint = 'جاري البحث... تأكد أن الطابعة مشغلة وقريبة، وغير متصلة بتطبيق آخر.';
-  else if (!scanning && !list.length && total) hint = 'لم يتم التعرف على طابعة. فعّل «إظهار كل أجهزة البلوتوث» واختر طابعتك يدوياً.';
-  else if (!scanning && !list.length) hint = printer.state === 'connected' ? '' : 'شغّل الطابعة ثم اضغط «بحث عن الطابعات» واختر طابعتك من القائمة.';
+  var total = deviceCount(), hint = '';
+  if (!list.length && scanning) hint = t('hintSearching');
+  else if (!list.length && printer.state !== 'connected') hint = t('hintStart');
   $('deviceHint').textContent = hint;
-  $('deviceHint').style.display = hint ? 'block' : 'none';
 }
 
 function renderPrinter() {
-  var dot = $('pDot'), txt = $('pStateText');
-  if (printer.state === 'connected') { dot.className = 'dot on'; txt.textContent = 'متصلة: ' + printer.name; }
-  else if (printer.state === 'connecting') { dot.className = 'dot wait'; txt.textContent = 'جاري الاتصال بـ ' + printer.name; }
-  else if (!printer.bluetooth) { dot.className = 'dot'; txt.textContent = 'البلوتوث غير مفعل'; }
-  else { dot.className = 'dot'; txt.textContent = 'غير متصلة'; }
-  $('disconnectBtn').style.display = printer.state === 'none' ? 'none' : '';
-  $('scanBtn').innerHTML = scanning ? 'إيقاف البحث<span class="spinner"></span>' : 'بحث عن الطابعات';
+  var label, dotCls, txtCls;
+  if (printer.state === 'connected') { label = t('connectedTo'); dotCls = 'dot on'; txtCls = 'green'; }
+  else if (printer.state === 'connecting') { label = t('connectingTo'); dotCls = 'dot wait'; txtCls = 'orange'; }
+  else if (!printer.bluetooth) { label = t('btOff'); dotCls = 'dot'; txtCls = 'red'; }
+  else { label = t('notConnected'); dotCls = 'dot'; txtCls = 'red'; }
+  $('pName').textContent = printer.name || t('printerWord');
+  $('pDot').className = dotCls; $('pStateText').textContent = label; $('pStateText').className = txtCls;
+  $('mDot').className = dotCls; $('mStateText').textContent = (printer.name ? printer.name + ' · ' : '') + label;
+  $('connectBtn').textContent = t('connect');
+  $('disconnectBtn').className = 'btn mt ghost tap' + (printer.state === 'none' ? ' hidden' : '');
+  $('scanBtn').innerHTML = scanning ? escapeHtml(t('stopScan')) + '<span class="spinner"></span>' : escapeHtml(t('scanPrinters'));
   $('printBtn').disabled = printing;
   renderDevices();
 }
 
-// Called from native code
+// ---- callbacks from native code ----
 window.onScanState = function (on) { scanResponded = true; scanning = !!on; renderPrinter(); };
 window.onDeviceFound = function (d) {
   var old = devices[d.id];
-  if (old && !d.name) d.name = old.name;          // keep a name we already know
+  if (old && !d.name) d.name = old.name;
   if (old && old.likely) d.likely = true;
   devices[d.id] = d;
-  if (scanning) setStatus('جاري البحث... تم العثور على ' + deviceCount() + ' جهاز');
   renderDevices();
 };
 window.onPrinterState = function (st) {
   printer = st;
-  if (st.id && st.name && !devices[st.id]) devices[st.id] = { id: st.id, name: st.name, rssi: -50, likely: true };
+  if (st.id && !devices[st.id]) devices[st.id] = { id: st.id, name: st.name, rssi: -50, likely: true };
   renderPrinter();
 };
-window.onPrintProgress = function (p) { setStatus('جاري الطباعة... ' + p + '%'); };
-window.onPrintDone = function (ok, msg) {
+// native code names -> page message keys
+var EV_ALIAS = { conn_failed: 'connect_fail', conn_timeout: 'connect_timeout', conn_lost: 'connection_lost',
+  not_found_again: 'not_found', print_ok: 'printed', conn_lost_printing: 'print_lost', print_busy: 'busy',
+  print_bad_data: 'bad_data' };
+function evKey(code) { return EV_ALIAS[code] || code; }
+window.onNative = function (e) {
+  e.code = evKey(e.code);
+  var msg = t('ev_' + e.code, { name: e.name || '', count: e.count || 0 });
+  var icon = EV_ICON[e.code] || 'ℹ️';
+  var last = state.log.length ? state.log[state.log.length - 1].m : '';
+  if (msg !== last) addLog(icon, msg);
+  if (e.code !== 'bt_ready' && e.code !== 'sending') toast(msg);
+  if (e.code === 'connected' && $('printerModal').className === 'modal') setTimeout(closePrinterModal, 700);
+};
+window.onPrintProgress = function (p) { toast(t('printing') + ' ' + p + '%', 3000); };
+var afterPrint = null;
+window.onPrintDone = function (r) {
+  var ok = !!r.ok, code = evKey(r.code);
   printing = false;
-  setStatus(msg);
   renderPrinter();
-  if (!ok) setTimeout(function () { alert(msg); }, 0);
+  var msg = t('ev_' + code);
+  addLog(ok ? '🖨️' : '🛑', msg);
+  toast(msg, ok ? 2600 : 4500);
+  if (ok && afterPrint) afterPrint();
+  afterPrint = null;
+  if (!ok && code === 'no_printer') openPrinterModal();
 };
 
-function printToCatPrinter() {
-  if (!items.length) { alert('أضف مادة واحدة على الأقل قبل الطباعة'); return; }
-  if (printer.state === 'none' && !printer.lastId) {
-    alert('لا توجد طابعة متصلة. اضغط «بحث عن الطابعات» واختر طابعتك أولاً.');
-    return;
-  }
-  printing = true;
-  renderPrinter();
-  setStatus('جاري تجهيز صورة الفاتورة للطابعة...');
-  saveLocal();
-  setTimeout(function () {
-    try {
-      nativeCall('print', { data: bytesToBase64(buildPrintJob()) });
-    } catch (e) {
-      printing = false;
-      renderPrinter();
-      setStatus('خطأ أثناء تجهيز الطباعة: ' + e.message);
-    }
-  }, 30);
+// ======================= receipt rendering =======================
+var FONT = '"Helvetica Neue", Helvetica, "Geeza Pro", Arial, sans-serif';
+function isLtr() { return state.lang === 'en'; }
+
+function loadImage(src, cb) {
+  if (!src) { cb(null); return; }
+  var img = new Image();
+  img.onload = function () { cb(img); };
+  img.onerror = function () { cb(null); };
+  img.src = src;
 }
 
-$('customerName').addEventListener('input', render);
-$('invoiceNo').addEventListener('input', render);
-$('discount').addEventListener('input', render);
+// blocks: {type:'text', text, size, bold, align} | {type:'row', a, b, size, bold}
+//         {type:'line'} | {type:'space', h} | {type:'image', img, w}
+function layoutBlocks(ctx, blocks, draw) {
+  var W = PRINT_WIDTH, M = 8, y = 6;
+  var ltr = isLtr();
+  var start = ltr ? M : W - M, end = ltr ? W - M : M;
+  var startAlign = ltr ? 'left' : 'right', endAlign = ltr ? 'right' : 'left';
+  var imageRects = [];
+  ctx.fillStyle = '#000'; ctx.strokeStyle = '#000';
 
-render();
+  function setFont(size, bold) { ctx.font = (bold ? 'bold ' : '') + size + 'px ' + FONT; }
+  function wrap(text, maxW) {
+    var words = String(text).split(' '), lines = [], line = '';
+    for (var i = 0; i < words.length; i++) {
+      var test = line ? line + ' ' + words[i] : words[i];
+      if (line && ctx.measureText(test).width > maxW) { lines.push(line); line = words[i]; }
+      else line = test;
+    }
+    if (line || !lines.length) lines.push(line);
+    return lines;
+  }
+
+  for (var i = 0; i < blocks.length; i++) {
+    var b = blocks[i];
+    if (b.type === 'space') { y += b.h; continue; }
+    if (b.type === 'line') {
+      y += 8;
+      if (draw) ctx.fillRect(M, y, W - 2 * M, 2);
+      y += 10;
+      continue;
+    }
+    if (b.type === 'qr') {
+      var qr = qrcode(0, 'M');
+      qr.addData(b.text);
+      qr.make();
+      var n = qr.getModuleCount(), cell = Math.max(2, Math.floor(b.size / n)), qs = cell * n;
+      var qx = Math.round((W - qs) / 2);
+      if (draw) {
+        for (var qy = 0; qy < n; qy++) for (var qc = 0; qc < n; qc++) {
+          if (qr.isDark(qy, qc)) ctx.fillRect(qx + qc * cell, y + qy * cell, cell, cell);
+        }
+      }
+      y += qs + 10;
+      continue;
+    }
+    if (b.type === 'image') {
+      var iw = Math.min(W - 2 * M, b.w), ih = Math.round(b.img.height * iw / b.img.width);
+      var ix = Math.round((W - iw) / 2);
+      if (draw) { ctx.drawImage(b.img, ix, y, iw, ih); imageRects.push([ix, y, iw, ih]); }
+      y += ih + 8;
+      continue;
+    }
+    setFont(b.size, b.bold);
+    var lh = Math.round(b.size * 1.35);
+    if (b.type === 'text') {
+      var lines = wrap(b.text, W - 2 * M);
+      for (var j = 0; j < lines.length; j++) {
+        if (draw) {
+          if (b.align === 'center') { ctx.textAlign = 'center'; ctx.fillText(lines[j], W / 2, y + b.size); }
+          else { ctx.textAlign = startAlign; ctx.fillText(lines[j], start, y + b.size); }
+        }
+        y += lh;
+      }
+    } else if (b.type === 'row') {
+      var bw = ctx.measureText(b.b).width;
+      var aLines = wrap(b.a, W - 2 * M - bw - 14);
+      if (draw) { ctx.textAlign = endAlign; ctx.fillText(b.b, end, y + b.size); ctx.textAlign = startAlign; }
+      for (var k = 0; k < aLines.length; k++) {
+        if (draw) ctx.fillText(aLines[k], start, y + b.size);
+        y += lh;
+      }
+    }
+  }
+  return { height: y + 8, imageRects: imageRects };
+}
+
+function renderBlocks(blocks) {
+  var canvas = $('printCanvas');
+  canvas.width = PRINT_WIDTH; canvas.height = 10;
+  var ctx = canvas.getContext('2d');
+  var h = Math.ceil(layoutBlocks(ctx, blocks, false).height);
+  canvas.height = h;                       // resets the canvas
+  ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, PRINT_WIDTH, h);
+  var res = layoutBlocks(ctx, blocks, true);
+  return { ctx: ctx, width: PRINT_WIDTH, height: h, imageRects: res.imageRects };
+}
+
+function headerBlocks(logoImg) {
+  var s = state.settings, base = +s.fontSize || 24, bold = !!s.bold;
+  var out = [];
+  if (logoImg) out.push({ type: 'image', img: logoImg, w: Math.round(120 * (+s.logoSize || 100) / 100) });
+  if (s.shopName) out.push({ type: 'text', text: s.shopName, size: Math.round(base * 1.35), bold: true, align: 'center' });
+  if (s.address) out.push({ type: 'text', text: s.address, size: Math.round(base * 0.85), bold: bold, align: 'center' });
+  if (s.phone) out.push({ type: 'text', text: s.phone, size: Math.round(base * 0.85), bold: bold, align: 'center' });
+  return out;
+}
+
+function footerBlocks() {
+  var s = state.settings, base = +s.fontSize || 24;
+  return [{ type: 'line' }, { type: 'text', text: s.footer || t('defaultFooter'), size: Math.round(base * 0.9), bold: !!s.bold, align: 'center' }];
+}
+
+function invoiceBlocks(logoImg) {
+  var s = state.settings, base = +s.fontSize || 24, bold = !!s.bold, small = Math.round(base * 0.85);
+  var b = headerBlocks(logoImg);
+  b.push({ type: 'line' });
+  b.push({ type: 'row', a: t('invoice') + ' #' + state.invoiceNo, b: dateStr(new Date()), size: small, bold: bold });
+  b.push({ type: 'line' });
+  each(cartLines(), function (l) {
+    b.push({ type: 'row', a: l.name, b: fmtNum(l.total), size: base, bold: bold });
+    b.push({ type: 'text', text: fmtNum(l.qty) + ' × ' + fmtNum(l.price), size: small, bold: false });
+    b.push({ type: 'space', h: 4 });
+  });
+  b.push({ type: 'line' });
+  b.push({ type: 'row', a: t('grandTotal'), b: money(cartTotal()), size: Math.round(base * 1.25), bold: true });
+  return b.concat(footerBlocks());
+}
+
+function testBlocks(logoImg) {
+  var s = state.settings, base = +s.fontSize || 24, bold = !!s.bold;
+  var b = headerBlocks(logoImg);
+  b.push({ type: 'line' });
+  b.push({ type: 'text', text: t('testLine'), size: base, bold: true, align: 'center' });
+  b.push({ type: 'row', a: t('sampleItem') + ' 1', b: money(1000), size: base, bold: bold });
+  b.push({ type: 'row', a: t('sampleItem') + ' 2', b: money(2500), size: base, bold: bold });
+  b.push({ type: 'text', text: dateStr(new Date()), size: Math.round(base * 0.85), bold: false, align: 'center' });
+  return b.concat(footerBlocks());
+}
+
+// Recharge voucher, laid out like createRechargeBitmap() in the Android app
+var COMPANIES = {
+  zain:  { key: 'zain',  prefix: '*101#', suffix: '#' },
+  asia:  { key: 'asia',  prefix: '*133*', suffix: '#' },
+  korek: { key: 'korek', prefix: '*221*', suffix: '#' }
+};
+function rechargeBlocks(company, code, amount) {
+  var c = COMPANIES[company], d = new Date();
+  var stamp = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' +
+    pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  var b = [{ type: 'space', h: 12 }];
+  b.push({ type: 'text', text: t(c.key), size: 40, bold: true, align: 'center' });
+  b.push({ type: 'text', text: fmtNum(amount), size: 36, bold: true, align: 'center' });
+  if (state.settings.shopName) b.push({ type: 'text', text: state.settings.shopName, size: 32, bold: true, align: 'center' });
+  b.push({ type: 'space', h: 10 });
+  b.push({ type: 'text', text: 'DATE', size: 20, bold: true, align: 'center' });
+  b.push({ type: 'text', text: stamp, size: 26, bold: true, align: 'center' });
+  b.push({ type: 'space', h: 16 });
+  b.push({ type: 'text', text: t('secretNo'), size: 20, bold: true, align: 'center' });
+  b.push({ type: 'text', text: code, size: 28, bold: true, align: 'center' });
+  b.push({ type: 'space', h: 12 });
+  b.push({ type: 'text', text: t('howToTop', { p: c.prefix, s: c.suffix }), size: 22, bold: true, align: 'center' });
+  b.push({ type: 'space', h: 16 });
+  b.push({ type: 'qr', text: c.prefix + code + c.suffix, size: 250 });
+  b.push({ type: 'space', h: 30 });
+  return b;
+}
+
+// ======================= Cat Printer protocol =======================
+// Same command sequence as the working Android app (PrinterCommands.kt,
+// cmdsPrintImgFast): packet = 51 78 CMD 00 LEN 00 DATA... CRC8(DATA) FF
+var CRC8_TABLE = (function () {
+  var tb = [];
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var j = 0; j < 8; j++) c = (c & 0x80) ? ((c << 1) ^ 0x07) & 0xFF : (c << 1) & 0xFF;
+    tb.push(c);
+  }
+  return tb;
+})();
+function crc8(data) {
+  var crc = 0;
+  for (var i = 0; i < data.length; i++) crc = CRC8_TABLE[(crc ^ data[i]) & 0xFF];
+  return crc;
+}
+function pushPacket(out, cmd, payload) {
+  out.push(0x51, 0x78, cmd, 0x00, payload.length & 0xFF, (payload.length >> 8) & 0xFF);
+  for (var i = 0; i < payload.length; i++) out.push(payload[i] & 0xFF);
+  out.push(crc8(payload), 0xFF);
+}
+var CMD_SET_PAPER = 0xA1, CMD_ROW = 0xA2, CMD_STATE = 0xA3, CMD_QUALITY = 0xA4, CMD_LATTICE = 0xA6,
+    CMD_ENERGY = 0xAF, CMD_FEED = 0xBD, CMD_APPLY_ENERGY = 0xBE;
+var LATTICE_START = [0xAA, 0x55, 0x17, 0x38, 0x44, 0x5F, 0x5F, 0x5F, 0x44, 0x38, 0x2C];
+var LATTICE_END   = [0xAA, 0x55, 0x17, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17];
+// print darkness 1..7 -> energy, as densityToEnergy() in the Android app
+var DEPTH_ENERGY = [0, 0x2000, 0x4000, 0x6000, 0x8000, 0xA000, 0xD000, 0xFFFF];
+
+// Floyd–Steinberg dithering for pictures (text is simply thresholded)
+function ditherRegion(px, W, H, rect) {
+  var x0 = Math.max(0, rect[0] | 0), y0 = Math.max(0, rect[1] | 0);
+  var w = Math.min(W - x0, Math.ceil(rect[2])), h = Math.min(H - y0, Math.ceil(rect[3]));
+  var g = [];
+  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+    var i = ((y0 + y) * W + x0 + x) * 4;
+    g.push(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]);
+  }
+  for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) {
+    var k = yy * w + xx, old = g[k], nv = old < 128 ? 0 : 255, err = old - nv;
+    if (xx + 1 < w) g[k + 1] += err * 7 / 16;
+    if (yy + 1 < h) {
+      if (xx > 0) g[k + w - 1] += err * 3 / 16;
+      g[k + w] += err * 5 / 16;
+      if (xx + 1 < w) g[k + w + 1] += err / 16;
+    }
+    var p = ((y0 + yy) * W + x0 + xx) * 4;
+    px[p] = px[p + 1] = px[p + 2] = nv;
+  }
+}
+
+function buildPrintJob(r) {
+  var px = r.ctx.getImageData(0, 0, r.width, r.height).data;
+  each(r.imageRects, function (rect) { ditherRegion(px, r.width, r.height, rect); });
+  var depth = Math.max(1, Math.min(7, +state.settings.depth || 7));
+  var energy = DEPTH_ENERGY[depth];
+  var out = [];
+  pushPacket(out, CMD_STATE, [0x00]);
+  pushPacket(out, CMD_QUALITY, [0x32]);                              // 200 dpi
+  pushPacket(out, CMD_ENERGY, [(energy >> 8) & 0xFF, energy & 0xFF]); // high byte first
+  pushPacket(out, CMD_APPLY_ENERGY, [0x01]);
+  pushPacket(out, CMD_LATTICE, LATTICE_START);
+  for (var y = 0; y < r.height; y++) {
+    var line = [];
+    for (var b = 0; b < BYTES_PER_LINE; b++) {
+      var v = 0;
+      for (var bit = 0; bit < 8; bit++) {
+        var i = (y * r.width + b * 8 + bit) * 4;
+        var lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        if (lum < 128) v |= (1 << bit);     // black = 1, LSB = leftmost dot
+      }
+      line.push(v);
+    }
+    pushPacket(out, CMD_ROW, line);
+  }
+  pushPacket(out, CMD_FEED, [25]);
+  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
+  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
+  pushPacket(out, CMD_SET_PAPER, [0x30, 0x00]);
+  pushPacket(out, CMD_LATTICE, LATTICE_END);
+  pushPacket(out, CMD_STATE, [0x00]);
+  return out;
+}
+
+function bytesToBase64(bytes) {
+  var parts = [], CH = 0x2000;
+  for (var i = 0; i < bytes.length; i += CH) parts.push(String.fromCharCode.apply(null, bytes.slice(i, i + CH)));
+  return btoa(parts.join(''));
+}
+
+function sendToPrinter(makeBlocks, onSuccess) {
+  if (printing) { toast(t('ev_busy')); return; }
+  if (printer.state === 'none' && !printer.lastId) { toast(t('ev_no_printer'), 4000); openPrinterModal(); return; }
+  printing = true;
+  renderPrinter();
+  toast(t('preparing'));
+  loadImage(state.settings.logo, function (logo) {
+    setTimeout(function () {
+      try {
+        var r = renderBlocks(makeBlocks(logo));
+        afterPrint = onSuccess || null;
+        nativeCall('print', { data: bytesToBase64(buildPrintJob(r)) });
+      } catch (e) {
+        printing = false;
+        renderPrinter();
+        toast(t('ev_bad_data') + ': ' + e.message, 4500);
+      }
+    }, 30);
+  });
+}
+
+function printInvoice() {
+  if (!cartLines().length) { toast(t('cartIsEmpty')); return; }
+  sendToPrinter(invoiceBlocks, function () {
+    state.invoiceNo = (+state.invoiceNo || 0) + 1;
+    state.cart = [];
+    save();
+    renderHome();
+  });
+}
+
+function testPrint() { sendToPrinter(testBlocks); }
+
+// ---- recharge screen ----
+function renderRecharge() {
+  var html = '';
+  each(['zain', 'asia', 'korek'], function (k) {
+    html += '<button class="company tap' + (state.company === k ? ' on' : '') + '" onclick="selectCompany(\'' + k + '\')">' + t(k) + '</button>';
+  });
+  $('companyRow').innerHTML = html;
+  var code = trim($('bCode').value), amount = trim($('bAmount').value), hint = '';
+  if (!state.company) hint = t('chooseCompany');
+  else if (code && code.length < 10) hint = t('codeTooShort');
+  $('rechargeHint').textContent = hint;
+  $('rechargeBtn').disabled = !(state.company && code.length >= 10 && amount);
+}
+function selectCompany(k) { state.company = k; save(); renderRecharge(); }
+
+// Pasting a full dial string (e.g. *133*123...#) picks the company itself.
+function onRechargeCode() {
+  var v = trim($('bCode').value), found = null;
+  for (var k in COMPANIES) if (COMPANIES.hasOwnProperty(k) && v.indexOf(COMPANIES[k].prefix) === 0) found = k;
+  if (found) {
+    v = v.substr(COMPANIES[found].prefix.length);
+    if (v.charAt(v.length - 1) === '#') v = v.substr(0, v.length - 1);
+    $('bCode').value = v;
+    state.company = found;
+    save();
+  }
+  renderRecharge();
+}
+
+function printRecharge() {
+  var code = trim($('bCode').value), amount = trim($('bAmount').value), company = state.company;
+  if (!company || code.length < 10 || !amount) { renderRecharge(); return; }
+  sendToPrinter(function () { return rechargeBlocks(company, code, amount); }, function () {
+    $('bCode').value = '';
+    renderRecharge();
+  });
+}
+
+// ======================= start =======================
+applyTexts();
+go('home');
 renderPrinter();
 </script>
 </body>

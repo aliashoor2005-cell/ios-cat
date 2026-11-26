@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ar</string>
 	<key>CFBundleDisplayName</key>
-	<string>فواتير</string>
+	<string>فاتورتي</string>
 	<key>CFBundleExecutable</key>
 	<string>CatInvoice</string>
 	<key>CFBundleIconFiles</key>
@@ -48,17 +48,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>فواتير</string>
+	<string>فاتورتي</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2</string>
+	<string>2.0</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>iPhoneOS</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MinimumOSVersion</key>
@@ -67,6 +67,10 @@
 	<string>يستخدم التطبيق البلوتوث للاتصال بطابعة Cat Printer وطباعة الفواتير.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>يستخدم التطبيق البلوتوث للاتصال بطابعة Cat Printer وطباعة الفواتير.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>لتصوير الأصناف وشعار المتجر.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>لاختيار صور الأصناف وشعار المتجر.</string>
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>
@@ -143,7 +147,7 @@
 		<string>bluetooth-le</string>
 	</array>
 	<key>UIStatusBarStyle</key>
-	<string>UIStatusBarStyleDefault</string>
+	<string>UIStatusBarStyleLightContent</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -155,5 +159,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>

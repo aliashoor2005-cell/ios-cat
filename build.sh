@@ -33,7 +33,7 @@ for arch in $ARCHS; do
   # namespace lets dyld find each symbol wherever it lives on the running iOS.
   clang -target "$arch-apple-ios$MIN_IOS" -isysroot "$SDK" \
     -fuse-ld="$T/bin/ld-ios" -Wl,-flat_namespace \
-    -framework UIKit -framework Foundation -framework CoreBluetooth -lobjc \
+    -framework UIKit -framework Foundation -framework CoreGraphics -framework CoreBluetooth -lobjc \
     "$OUT/main_$arch.o" -o "$OUT/${APP}_$arch" 2>&1 | { grep -v 'built for iOS Simulator' || true; }
   [ -f "$OUT/${APP}_$arch" ] || { echo "link failed for $arch"; exit 1; }
   slices+=("$OUT/${APP}_$arch")
