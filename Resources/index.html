@@ -217,6 +217,88 @@ html[dir=ltr] .list-row .thumb { margin: 0 12px 0 0; }
 .toast { position: fixed; left: 16px; right: 16px; bottom: 24px; z-index: 80; text-align: center; }
 .toast span { display: inline-block; background: rgba(30,30,30,.95); color: #fff; border-radius: 22px; padding: 11px 18px; font-size: 14px; max-width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
 canvas#printCanvas { display: none; }
+
+/* ---------- fast taps ---------- */
+.tap, .prod { -webkit-user-select: none; -webkit-touch-callout: none; }
+.pressed { opacity: .55; }
+select.inp { height: 48px; padding: 0 12px; }
+.clear-btn { background: none; border: none; font-size: 16px; font-weight: bold; padding: 8px 4px; }
+.print-btn { background: #22c55e; color: #fff; font-weight: bold; }
+.foot-row .tot { text-align: left; }
+html[dir=ltr] .foot-row .tot { text-align: right; }
+.foot-row .tot .amt { font-size: 26px; font-weight: bold; color: #ff9800; }
+.foot-row .field { margin-top: 10px; }
+
+/* ---------- sections (categories) ---------- */
+.chips { white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 10px 0 0; padding-bottom: 2px; }
+.chip { display: inline-block; padding: 8px 16px; border-radius: 18px; border: 1.5px solid #8d8a94; margin: 0 0 0 6px; background: none; color: inherit; font-size: 14px; }
+html[dir=ltr] .chip { margin: 0 6px 0 0; }
+.chip.on { background: #ff9800; border-color: #ff9800; color: #1c1b1f; font-weight: bold; }
+.sec-title { font-size: 16px; font-weight: bold; color: #ff9800; margin: 16px 2px 0; padding-bottom: 6px; border-bottom: 1px solid #3a3a3a; }
+body.light .sec-title { border-color: #e2e1e6; }
+.sec-title .muted { font-size: 13px; font-weight: normal; }
+.grid { margin-top: 10px; }
+.cat-row .t { font-size: 17px; font-weight: bold; }
+.mgr-sec { font-size: 15px; font-weight: bold; color: #ff9800; margin: 14px 0 0; }
+
+/* ---------- header actions ---------- */
+.wide-only { display: none; }
+.hbtn2 { border: none; border-radius: 10px; padding: 9px 14px; margin: 0 4px; font-size: 15px; font-weight: bold; background: #2b2930; color: #f2f2f2; white-space: nowrap; }
+body.light .hbtn2 { background: #e4e3ea; color: #1c1b1f; }
+.hbtn2.primary, body.light .hbtn2.primary { background: #ff9800; color: #1c1b1f; }
+.hbtn2 .dot { margin: 0 0 0 6px; }
+html[dir=ltr] .hbtn2 .dot { margin: 0 6px 0 0; }
+
+/* ---------- iPad: point-of-sale layout (items + current invoice side by side) ---------- */
+@media (min-width: 700px) {
+  .narrow-only { display: none !important; }
+  .header.onhome .wide-only { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+  .header.onhome h1 { text-align: right; padding: 0 4px; font-weight: bold; }
+  html[dir=ltr] .header.onhome h1 { text-align: left; }
+  .header.onhome .hspacer { display: none; }
+  #v-home { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; padding: 0; max-width: none; margin: 0; }
+  #v-home .pos-main { position: absolute; top: 0; bottom: 0; right: 0; left: 300px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 10px 24px 8px; }
+  html[dir=ltr] #v-home .pos-main { right: 300px; left: 0; padding: 8px 8px 24px 10px; }
+  #v-home .pos-side { position: absolute; top: 0; bottom: 0; left: 0; width: 300px; }
+  html[dir=ltr] #v-home .pos-side { left: auto; right: 0; }
+  .pos-main .prod-card { margin: 0; padding: 12px 10px 16px; min-height: 100%; }
+  .side-cart { position: absolute; top: 8px; bottom: 168px; left: 10px; right: 0; margin: 0; padding: 0; overflow: hidden; }
+  html[dir=ltr] .side-cart { left: 0; right: 10px; }
+  .side-head { height: 52px; padding: 0 14px; border-bottom: 1px solid #3a3a3a; }
+  body.light .side-head { border-color: #e2e1e6; }
+  .side-head h2 { font-size: 16px; }
+  .side-cart #cartList { position: absolute; top: 52px; bottom: 0; left: 0; right: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0; padding: 0 12px; }
+  .side-foot { position: absolute; bottom: 8px; left: 10px; right: 0; height: 152px; margin: 0; padding: 4px 14px 12px; }
+  html[dir=ltr] .side-foot { left: 0; right: 10px; }
+  .side-foot .invno { width: 120px; }
+  .cart-row .nm { font-size: 14px; }
+  .cart-row .sm { font-size: 12px; }
+  .qty-btn { width: 30px; height: 30px; line-height: 30px; font-size: 18px; }
+  .qty { min-width: 24px; }
+  /* smaller, tidier item cards: 3 per row in portrait */
+  .grid { margin: 10px -3px 0; }
+  .prod { width: 31%; width: -webkit-calc(33.333% - 6px); width: calc(33.333% - 6px); margin: 0 3px 6px; border-radius: 12px; }
+  .prod .img, .prod .ph { padding-bottom: 62%; }
+  .prod .ph span { font-size: 26px; margin-top: -15px; line-height: 30px; }
+  .prod .nm { font-size: 14px; padding: 7px 4px 1px; }
+  .prod .pr { font-size: 13px; padding: 0 4px 8px; }
+  .prod .badge { top: 5px; left: 5px; min-width: 24px; height: 24px; line-height: 24px; font-size: 13px; border-radius: 12px; }
+  html[dir=ltr] .prod .badge { right: 5px; }
+  .grid.text .prod .nm { padding-top: 14px; }
+  .grid.text .prod .pr { padding-bottom: 14px; }
+  .grid.list { margin: 10px -3px 0; }
+  .grid.list .prod { float: right; width: 48%; width: -webkit-calc(50% - 6px); width: calc(50% - 6px); margin: 0 3px 6px; }
+  html[dir=ltr] .grid.list .prod { float: left; }
+  .grid.list .prod .thumb { width: 44px; height: 44px; }
+}
+/* landscape / wide: 5 items per row */
+@media (min-width: 960px) {
+  #v-home .pos-main { left: 330px; }
+  html[dir=ltr] #v-home .pos-main { right: 330px; left: 0; }
+  #v-home .pos-side { width: 330px; }
+  .prod { width: 19%; width: -webkit-calc(20% - 6px); width: calc(20% - 6px); }
+  .grid.list .prod { width: 32%; width: -webkit-calc(33.333% - 6px); width: calc(33.333% - 6px); }
+}
 </style>
 </head>
 <body>
@@ -226,12 +308,17 @@ canvas#printCanvas { display: none; }
   <button class="hbtn tap" id="menuBtn" onclick="openDrawer()">&#9776;</button>
   <button class="hbtn tap hidden" id="backBtn" onclick="go('home')">&#8594;</button>
   <h1 class="grow" id="headerTitle">فاتورتي</h1>
-  <div style="width:44px"></div>
+  <div class="wide-only">
+    <button class="hbtn2 tap" onclick="openPrinterModal()"><span class="dot" id="hDot"></span><span id="hPrinter"></span></button>
+    <button class="hbtn2 primary tap" onclick="openAddModal()">+ <span data-t="addItemBtn"></span></button>
+  </div>
+  <div class="hspacer" style="width:44px"></div>
 </div>
 
 <!-- ======================= home ======================= -->
 <div class="page" id="v-home">
-  <div class="card pcard flex between">
+ <div class="pos-main">
+  <div class="card pcard flex between narrow-only">
     <div class="grow">
       <div class="pname" id="pName"></div>
       <div class="pstate"><span class="dot" id="pDot"></span><span id="pStateText" class="red"></span></div>
@@ -239,40 +326,42 @@ canvas#printCanvas { display: none; }
     <button class="btn small tap" id="connectBtn" onclick="openPrinterModal()"></button>
   </div>
 
-  <div class="card">
-    <h2 data-t="addToOrder"></h2>
+  <div class="card prod-card">
+    <h2 class="narrow-only" data-t="addToOrder"></h2>
     <div class="search">
       <input class="inp" id="homeSearch" type="search" oninput="renderProducts()" data-ph="searchItem">
-      <span class="ic">&#128722;</span>
+      <span class="ic">&#128269;</span>
     </div>
-    <div class="grid" id="prodGrid"></div>
-    <div class="quick flex">
+    <div class="chips hidden" id="catChips"></div>
+    <div id="prodGrid"></div>
+    <div class="quick flex narrow-only">
       <label class="imgpick tap sub-card" id="quickImg"><span>&#128247;</span><input type="file" accept="image/*" onclick="return nativePick(event,'quick')" onchange="pickImage(this, setQuickImg)"></label>
       <input class="inp grow" id="quickName" data-ph="itemName">
       <input class="inp" id="quickPrice" type="number" step="any" style="width:30%" data-ph="price">
       <button class="plus tap" onclick="quickAdd()">+</button>
     </div>
   </div>
+ </div>
 
-  <div class="card">
-    <div class="flex between">
-      <h2 style="margin:0"><span data-t="cart"></span> (<span id="cartCount">0</span>)</h2>
-      <button class="icon-btn tap red hidden" id="clearCartBtn" onclick="clearCart()">&#128465;</button>
+ <div class="pos-side">
+  <div class="card side-cart">
+    <div class="flex between side-head">
+      <h2 style="margin:0"><span data-t="currentInvoice"></span> (<span id="cartCount">0</span>)</h2>
+      <button class="clear-btn tap red hidden" id="clearCartBtn" onclick="clearCart()" data-t="clearBtn"></button>
     </div>
     <div id="cartList" class="mt"></div>
   </div>
-
-  <div class="card">
-    <div class="field invno">
-      <input id="invoiceNo" type="number" oninput="setInvoiceNo(this.value)">
-      <label data-t="invoiceNo"></label>
+  <div class="card side-foot">
+    <div class="flex between foot-row">
+      <div class="field invno">
+        <input id="invoiceNo" type="number" oninput="setInvoiceNo(this.value)">
+        <label data-t="invoiceNo"></label>
+      </div>
+      <div class="tot grow"><div class="muted" style="font-size:14px" data-t="grandTotal"></div><div class="amt" id="grandTotal">0</div></div>
     </div>
-    <div class="total-row sep flex between">
-      <div style="font-size:18px" data-t="grandTotal"></div>
-      <div class="amt" id="grandTotal">0</div>
-    </div>
-    <button class="btn mt tap" id="printBtn" onclick="printInvoice()" data-t="print"></button>
+    <button class="btn mt tap print-btn" id="printBtn" onclick="printInvoice()" data-t="print"></button>
   </div>
+ </div>
 </div>
 
 <!-- ======================= invoice settings ======================= -->
@@ -319,12 +408,25 @@ canvas#printCanvas { display: none; }
 <!-- ======================= items manager ======================= -->
 <div class="page hidden" id="v-items">
   <div class="card">
+    <h2 data-t="categories"></h2>
+    <div class="flex addrow">
+      <input class="inp grow" id="catName" data-ph="categoryName">
+      <button class="plus tap" onclick="addCategory()">+</button>
+    </div>
+    <div class="muted mt" style="font-size:13px" data-t="catHint"></div>
+    <div id="catList" class="mt"></div>
+  </div>
+  <div class="card">
     <h2 data-t="addNewItems"></h2>
     <div class="flex addrow">
       <label class="imgpick tap sub-card" id="mgrImg"><span>&#128247;</span><input type="file" accept="image/*" onclick="return nativePick(event,'mgr')" onchange="pickImage(this, setMgrImg)"></label>
       <input class="inp grow" id="mgrName" data-ph="itemName">
       <input class="inp" id="mgrPrice" type="number" step="any" style="width:30%" data-ph="price">
       <button class="plus tap" onclick="mgrAdd()">+</button>
+    </div>
+    <div class="flex mt">
+      <select class="inp grow" id="mgrCat"></select>
+      <button class="btn small ghost tap" style="margin:0 6px" onclick="newCatFor('mgrCat')" data-t="newCategory"></button>
     </div>
   </div>
   <div class="card">
@@ -405,9 +507,40 @@ canvas#printCanvas { display: none; }
     <div class="field"><input id="editName"><label data-t="itemName"></label></div>
     <div class="field"><input id="editPrice" type="number" step="any"><label data-t="price"></label></div>
     <div class="flex mt">
+      <select class="inp grow" id="editCat"></select>
+      <button class="btn small ghost tap" style="margin:0 6px" onclick="newCatFor('editCat')" data-t="newCategory"></button>
+    </div>
+    <div class="flex mt">
       <button class="btn tap grow" onclick="saveEdit()" data-t="save"></button>
       <div style="width:10px"></div>
       <button class="btn ghost tap grow" onclick="closeEdit()" data-t="cancel"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= add item modal ======================= -->
+<div class="modal hidden" id="addModal">
+  <div class="modal-box">
+    <div class="flex between">
+      <h2 style="margin:0" data-t="addItemBtn"></h2>
+      <button class="icon-btn tap" onclick="closeAddModal()">&#10005;</button>
+    </div>
+    <div class="flex mt">
+      <label class="imgpick tap sub-card" id="addImg" style="width:72px;height:72px;line-height:72px"><span>&#128247;</span><input type="file" accept="image/*" onclick="return nativePick(event,'add')" onchange="pickImage(this, setAddImg)"></label>
+      <div style="width:10px"></div>
+      <button class="btn small ghost tap" onclick="setAddImg('')" data-t="removeImage"></button>
+    </div>
+    <div class="field"><input id="addName"><label data-t="itemName"></label></div>
+    <div class="field"><input id="addPrice" type="number" step="any"><label data-t="price"></label></div>
+    <div class="slider-label" data-t="category"></div>
+    <div class="flex">
+      <select class="inp grow" id="addCat"></select>
+      <button class="btn small ghost tap" style="margin:0 6px" onclick="newCatFor('addCat')" data-t="newCategory"></button>
+    </div>
+    <div class="flex mt">
+      <button class="btn tap grow" onclick="saveAdd()" data-t="save"></button>
+      <div style="width:10px"></div>
+      <button class="btn ghost tap grow" onclick="closeAddModal()" data-t="close"></button>
     </div>
   </div>
 </div>
@@ -443,7 +576,24 @@ var T = {
   price: ['السعر', 'Price', 'نرخ'],
   cart: ['السلة', 'Cart', 'سەبەتە'],
   cartEmpty: ['السلة فارغة', 'Cart is empty', 'سەبەتە بەتاڵە'],
-  noItems: ['لا توجد أصناف بعد. أضف صنفاً بالأسفل.', 'No items yet. Add one below.', 'هیچ کاڵایەک نییە. لە خوارەوە زیادی بکە.'],
+  noItems: ['لا توجد أصناف بعد. اضغط «إضافة مادة».', 'No items yet. Tap "Add item".', 'هیچ کاڵایەک نییە. "زیادکردنی کاڵا" دابگرە.'],
+  addItemBtn: ['إضافة مادة', 'Add item', 'زیادکردنی کاڵا'],
+  searchPrinter: ['بحث طابعة', 'Find printer', 'گەڕانی چاپکەر'],
+  currentInvoice: ['الفاتورة الحالية', 'Current invoice', 'پسوولەی ئێستا'],
+  clearBtn: ['مسح', 'Clear', 'سڕینەوە'],
+  categories: ['الأقسام', 'Sections', 'بەشەکان'],
+  category: ['القسم', 'Section', 'بەش'],
+  categoryName: ['اسم القسم (مثلاً: وجبات أساسية)', 'Section name (e.g. Main dishes)', 'ناوی بەش (بۆ نموونە: ژەمە سەرەکییەکان)'],
+  catHint: ['الأقسام تظهر في الشاشة الرئيسية بترتيب إنشائها، وتحت كل قسم أصنافه.', 'Sections appear on the home screen in the order you created them, each with its items.', 'بەشەکان بە ڕیزبەندی دروستکردنیان لە پەڕەی سەرەکی دەردەکەون.'],
+  newCategory: ['+ قسم جديد', '+ New section', '+ بەشی نوێ'],
+  general: ['عام', 'General', 'گشتی'],
+  allCats: ['الكل', 'All', 'هەموو'],
+  renameCat: ['الاسم الجديد للقسم', 'New name for the section', 'ناوی نوێی بەش'],
+  confirmDeleteCat: ['حذف هذا القسم؟ أصنافه لن تُحذف وستنتقل إلى «عام».', 'Delete this section? Its items are kept and move to "General".', 'ئەم بەشە بسڕدرێتەوە؟ کاڵاکانی دەچنە "گشتی".'],
+  enterCatName: ['أدخل اسم القسم', 'Enter a section name', 'ناوی بەش بنووسە'],
+  noCats: ['لا توجد أقسام بعد. الأصناف بدون قسم تظهر تحت «عام».', 'No sections yet. Items without a section show under "General".', 'هیچ بەشێک نییە. کاڵای بێ بەش لە "گشتی" دەردەکەون.'],
+  itemsCount: ['{count} صنف', '{count} item(s)', '{count} کاڵا'],
+  close: ['إغلاق', 'Close', 'داخستن'],
   noMatch: ['لا توجد نتائج', 'No results', 'هیچ ئەنجامێک نییە'],
   invoiceNo: ['رقم الفاتورة', 'Invoice no.', 'ژمارەی پسوولە'],
   grandTotal: ['المجموع الكلي', 'Total', 'کۆی گشتی'],
@@ -482,8 +632,8 @@ var T = {
   confirmDelete: ['هل تريد حذف هذا الصنف؟', 'Delete this item?', 'ئەم کاڵایە بسڕدرێتەوە؟'],
   confirmClear: ['تفريغ السلة؟', 'Clear the cart?', 'سەبەتە بەتاڵ بکرێتەوە؟'],
   layoutDefault: ['الافتراضي', 'Default (list)', 'بنەڕەتی (لیست)'],
-  layoutText: ['عامودين (نص)', 'Two columns (text)', 'دوو ستوون (دەق)'],
-  layoutImage: ['عامودين (صورة)', 'Two columns (image)', 'دوو ستوون (وێنە)'],
+  layoutText: ['مربعات (نص فقط)', 'Grid (text only)', 'خانە (تەنها دەق)'],
+  layoutImage: ['مربعات (مع صورة)', 'Grid (with picture)', 'خانە (لەگەڵ وێنە)'],
   printers: ['الطابعات', 'Printers', 'چاپکەرەکان'],
   scanPrinters: ['بحث عن الطابعات', 'Search for printers', 'گەڕان بۆ چاپکەر'],
   stopScan: ['إيقاف البحث', 'Stop searching', 'وەستاندنی گەڕان'],
@@ -575,7 +725,8 @@ var DEFAULT_STATE = {
   theme: 'dark',
   layout: 'image2',
   invoiceNo: 1,
-  items: [],      // {id, name, price, img}
+  cats: [],       // {id, name}  sections, in creation order
+  items: [],      // {id, name, price, img, catId}
   cart: [],       // {id, qty}
   log: [],        // {t, i, m}
   settings: { shopName: '', address: '', phone: '', footer: '', logo: '', logoSize: 100, fontSize: 24, bold: true, depth: 7, currency: 'د.ع' },
@@ -611,19 +762,22 @@ function loadState() {
 }
 
 var state = loadState();
-var saveTimer = null, lastMedia = null;
+var saveTimer = null, mediaDirty = !readStore('media');
 // Items (with their pictures) and the logo are big, so they are stored apart
 // and only re-written when they change. Native store = Documents folder.
 function storeWrite(key, json) {
   if (window.__isNative) nativeCall('save', { key: key, value: json });
   else { try { localStorage.setItem('fatorati_' + key, json); } catch (e) {} }
 }
-function save() {
+function save(media) {
+  if (media) mediaDirty = true;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(function () {
     saveTimer = null;
-    var media = JSON.stringify({ items: state.items, logo: state.settings.logo });
-    if (media !== lastMedia) { storeWrite('media', media); lastMedia = media; }
+    if (mediaDirty) {
+      mediaDirty = false;
+      storeWrite('media', JSON.stringify({ items: state.items, logo: state.settings.logo }));
+    }
     var light = {};
     for (var k in state) if (state.hasOwnProperty(k) && k !== 'items' && k !== 'settings') light[k] = state[k];
     light.settings = {};
@@ -704,6 +858,7 @@ function go(view) {
   for (var v in VIEW_TITLES) if (VIEW_TITLES.hasOwnProperty(v)) {
     $('v-' + v).className = 'page' + (v === view ? '' : ' hidden');
   }
+  $('header').className = 'header flex between' + (view === 'home' ? ' onhome' : '');
   $('menuBtn').className = 'hbtn tap' + (view === 'home' ? '' : ' hidden');
   $('backBtn').className = 'hbtn tap' + (view === 'home' ? ' hidden' : '');
   $('headerTitle').textContent = t(VIEW_TITLES[view]);
@@ -874,7 +1029,7 @@ function nativePick(ev, target) {
   return false;
 }
 window.onImagePicked = function (r) {
-  var fn = { quick: setQuickImg, mgr: setMgrImg, edit: setEditImg, logo: setLogo }[r.target];
+  var fn = { quick: setQuickImg, mgr: setMgrImg, edit: setEditImg, logo: setLogo, add: setAddImg }[r.target];
   if (fn) fn(r.data);
 };
 
@@ -888,20 +1043,101 @@ var quickImg = '', mgrImg = '';
 function setQuickImg(img) { quickImg = img; showPickPreview($('quickImg'), img); }
 function setMgrImg(img) { mgrImg = img; showPickPreview($('mgrImg'), img); }
 
-function addItem(name, price, img) {
+// ---- sections (categories) ----
+var homeCat = 'all';   // section chip selected on the home screen
+function catById(id) {
+  for (var i = 0; i < state.cats.length; i++) if (state.cats[i].id === id) return state.cats[i];
+  return null;
+}
+function itemCat(it) { return it.catId && catById(it.catId) ? it.catId : ''; }
+function catGroups() {
+  var g = [{ id: '', name: t('general') }];
+  for (var i = 0; i < state.cats.length; i++) g.push(state.cats[i]);
+  return g;
+}
+function newCat(name) {
+  var c = { id: uid(), name: name };
+  state.cats.push(c);
+  save();
+  return c;
+}
+function fillCatSelect(sel, value) {
+  var html = '';
+  each(catGroups(), function (g) { html += '<option value="' + g.id + '">' + escapeHtml(g.name) + '</option>'; });
+  sel.innerHTML = html;
+  sel.value = catById(value) ? value : '';
+}
+function newCatFor(selId) {
+  var n = trim(prompt(t('categoryName'), '') || '');
+  if (!n) return;
+  var c = newCat(n);
+  fillCatSelect($(selId), c.id);
+  if (currentView === 'items') renderCatList();
+}
+function addCategory() {
+  var n = trim($('catName').value);
+  if (!n) { toast(t('enterCatName')); return; }
+  var c = newCat(n);
+  $('catName').value = '';
+  renderManager();
+  $('mgrCat').value = c.id;
+}
+function renameCategory(id) {
+  var c = catById(id);
+  if (!c) return;
+  var n = trim(prompt(t('renameCat'), c.name) || '');
+  if (!n) return;
+  c.name = n;
+  save();
+  renderManager();
+}
+function deleteCategory(id) {
+  if (!confirm(t('confirmDeleteCat'))) return;
+  for (var i = 0; i < state.cats.length; i++) if (state.cats[i].id === id) { state.cats.splice(i, 1); break; }
+  each(state.items, function (it) { if (it.catId === id) it.catId = ''; });
+  if (homeCat === id) homeCat = 'all';
+  save(true);
+  renderManager();
+}
+
+function addItem(name, price, img, catId) {
   name = trim(name);
   price = parseFloat(price);
   if (!name || isNaN(price) || price < 0) { toast(t('enterNamePrice')); return false; }
-  state.items.push({ id: uid(), name: name, price: price, img: img || '' });
-  save();
+  state.items.push({ id: uid(), name: name, price: price, img: img || '', catId: catId || '' });
+  save(true);
   return true;
 }
 
 function quickAdd() {
-  if (!addItem($('quickName').value, $('quickPrice').value, quickImg)) return;
+  if (!addItem($('quickName').value, $('quickPrice').value, quickImg, homeCat !== 'all' ? homeCat : '')) return;
   $('quickName').value = ''; $('quickPrice').value = '';
   setQuickImg('');
   renderProducts();
+}
+
+// ---- "+ add item" window (iPad header button) ----
+var addImg = '', lastAddCat = '';
+function setAddImg(img) { addImg = img; showPickPreview($('addImg'), img); }
+function openAddModal() {
+  $('addName').value = ''; $('addPrice').value = '';
+  setAddImg('');
+  fillCatSelect($('addCat'), homeCat !== 'all' ? homeCat : lastAddCat);
+  $('addModal').className = 'modal';
+}
+function closeAddModal() {
+  $('addModal').className = 'modal hidden';
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  if (currentView === 'home') renderProducts();
+}
+function saveAdd() {
+  var cat = $('addCat').value;
+  if (!addItem($('addName').value, $('addPrice').value, addImg, cat)) return;
+  lastAddCat = cat;
+  $('addName').value = ''; $('addPrice').value = '';
+  setAddImg('');
+  toast(t('saved'), 1200);
+  if (currentView === 'home') renderProducts();
 }
 
 function cartQty(id) {
@@ -909,13 +1145,25 @@ function cartQty(id) {
   return 0;
 }
 
+// Only the tapped item's badge and the invoice panel are redrawn, so a tap
+// does not rebuild the whole grid (with all its pictures).
+function updateBadge(id) {
+  var el = $('b_' + id);
+  if (!el) return;
+  var q = cartQty(id);
+  el.textContent = q;
+  el.className = 'badge' + (q ? '' : ' hidden');
+}
+
 function addToCart(id) {
+  var found = false;
   for (var i = 0; i < state.cart.length; i++) {
-    if (state.cart[i].id === id) { state.cart[i].qty++; save(); renderHome(); return; }
+    if (state.cart[i].id === id) { state.cart[i].qty++; found = true; break; }
   }
-  state.cart.push({ id: id, qty: 1 });
+  if (!found) state.cart.push({ id: id, qty: 1 });
   save();
-  renderHome();
+  updateBadge(id);
+  renderCart();
 }
 
 function changeQty(id, d) {
@@ -927,7 +1175,8 @@ function changeQty(id, d) {
     }
   }
   save();
-  renderHome();
+  updateBadge(id);
+  renderCart();
 }
 
 function clearCart() {
@@ -957,33 +1206,69 @@ function setInvoiceNo(v) {
   if (!isNaN(n) && n > 0) { state.invoiceNo = n; save(); }
 }
 
+function setHomeCat(id) {
+  homeCat = id;
+  renderProducts();
+  var m = document.querySelector('#v-home .pos-main');
+  if (m) m.scrollTop = 0;
+}
+
+function prodHtml(it, layout) {
+  var qty = cartQty(it.id);
+  var badge = '<span class="badge' + (qty ? '' : ' hidden') + '" id="b_' + it.id + '">' + qty + '</span>';
+  var bg = it.img ? ' style="background-image:url(' + it.img + ')"' : '';
+  var open = '<div class="prod tap" onclick="addToCart(\'' + it.id + '\')">';
+  if (layout === 'list') {
+    return open + '<div class="inner"><div class="thumb"' + bg + '></div>' +
+      '<div class="grow"><div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + escapeHtml(money(it.price)) + '</div></div>' +
+      badge + '</div></div>';
+  }
+  var pic = '';
+  if (layout === 'image2') pic = it.img ? '<div class="img"' + bg + '></div>' : '<div class="ph"><span>&#127869;</span></div>';
+  return open + pic + '<div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + escapeHtml(money(it.price)) + '</div>' + badge + '</div>';
+}
+
 function renderProducts() {
   var q = ($('homeSearch').value || '').toLowerCase();
   var layout = state.layout;
-  var grid = $('prodGrid');
-  grid.className = 'grid' + (layout === 'list' ? ' list' : layout === 'text2' ? ' text' : '');
-  var html = '', shown = 0;
-  for (var i = 0; i < state.items.length; i++) {
-    var it = state.items[i];
-    if (q && it.name.toLowerCase().indexOf(q) < 0) continue;
-    shown++;
-    var qty = cartQty(it.id);
-    var badge = qty ? '<span class="badge">' + qty + '</span>' : '';
-    var bg = it.img ? ' style="background-image:url(' + it.img + ')"' : '';
-    if (layout === 'list') {
-      html += '<div class="prod tap" onclick="addToCart(\'' + it.id + '\')"><div class="inner">' +
-        '<div class="thumb"' + bg + '></div>' +
-        '<div class="grow"><div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + escapeHtml(money(it.price)) + '</div></div>' +
-        badge + '</div></div>';
-    } else {
-      var pic = '';
-      if (layout === 'image2') pic = it.img ? '<div class="img"' + bg + '></div>' : '<div class="ph"><span>&#127869;</span></div>';
-      html += '<div class="prod tap" onclick="addToCart(\'' + it.id + '\')">' + pic +
-        '<div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + escapeHtml(money(it.price)) + '</div>' + badge + '</div>';
-    }
+  var cls = 'grid' + (layout === 'list' ? ' list' : layout === 'text2' ? ' text' : '');
+  var hasCats = state.cats.length > 0;
+  var groups = catGroups();
+  if (homeCat !== 'all' && !catById(homeCat) && homeCat !== '') homeCat = 'all';
+
+  // items of each section, in the order they were added
+  var byCat = {};
+  each(groups, function (g) { byCat[g.id] = []; });
+  each(state.items, function (it) { byCat[itemCat(it)].push(it); });
+
+  // section chips: الكل | عام | وجبات أساسية | مقبلات ...
+  var chips = '';
+  if (hasCats) {
+    chips = '<button class="chip tap' + (homeCat === 'all' ? ' on' : '') + '" onclick="setHomeCat(\'all\')">' + escapeHtml(t('allCats')) + '</button>';
+    each(groups, function (g) {
+      if (g.id === '' && !byCat[''].length) return;
+      chips += '<button class="chip tap' + (homeCat === g.id ? ' on' : '') + '" onclick="setHomeCat(\'' + g.id + '\')">' + escapeHtml(g.name) + '</button>';
+    });
   }
+  $('catChips').innerHTML = chips;
+  $('catChips').className = 'chips' + (hasCats ? '' : ' hidden');
+
+  var html = '', shown = 0;
+  each(groups, function (g) {
+    if (homeCat !== 'all' && g.id !== homeCat) return;
+    var cells = '', n = 0;
+    each(byCat[g.id], function (it) {
+      if (q && it.name.toLowerCase().indexOf(q) < 0) return;
+      cells += prodHtml(it, layout);
+      n++;
+    });
+    if (!n) return;
+    shown += n;
+    if (hasCats) html += '<div class="sec-title">' + escapeHtml(g.name) + ' <span class="muted">(' + n + ')</span></div>';
+    html += '<div class="' + cls + '">' + cells + '</div>';
+  });
   if (!shown) html = '<div class="empty muted">' + (state.items.length ? t('noMatch') : t('noItems')) + '</div>';
-  grid.innerHTML = html;
+  $('prodGrid').innerHTML = html;
 }
 
 function renderCart() {
@@ -991,7 +1276,7 @@ function renderCart() {
   var count = 0;
   for (var i = 0; i < lines.length; i++) count += lines[i].qty;
   $('cartCount').textContent = count;
-  $('clearCartBtn').className = 'icon-btn tap red' + (lines.length ? '' : ' hidden');
+  $('clearCartBtn').className = 'clear-btn tap red' + (lines.length ? '' : ' hidden');
   if (!lines.length) {
     $('cartList').innerHTML = '<div class="empty muted">' + t('cartEmpty') + '</div>';
   } else {
@@ -1018,25 +1303,51 @@ function renderHome() {
 
 // ======================= items manager =======================
 function mgrAdd() {
-  if (!addItem($('mgrName').value, $('mgrPrice').value, mgrImg)) return;
+  if (!addItem($('mgrName').value, $('mgrPrice').value, mgrImg, $('mgrCat').value)) return;
   $('mgrName').value = ''; $('mgrPrice').value = '';
   setMgrImg('');
   toast(t('saved'));
   renderManager();
 }
 
-function renderManager() {
-  var q = ($('mgrSearch').value || '').toLowerCase();
+function catItemCount(id) {
+  var n = 0;
+  each(state.items, function (it) { if (itemCat(it) === id) n++; });
+  return n;
+}
+
+function renderCatList() {
   var html = '';
-  for (var i = 0; i < state.items.length; i++) {
-    var it = state.items[i];
-    if (q && it.name.toLowerCase().indexOf(q) < 0) continue;
-    html += '<div class="list-row flex">' +
-      '<div class="thumb"' + (it.img ? ' style="background-image:url(' + it.img + ')">' : '>&#127869;') + '</div>' +
-      '<div class="grow t">' + escapeHtml(it.name) + ' - ' + escapeHtml(money(it.price)) + '</div>' +
-      '<button class="icon-btn tap orange" onclick="openEdit(\'' + it.id + '\')">&#9881;</button>' +
-      '<button class="icon-btn tap red" onclick="deleteItem(\'' + it.id + '\')">&#128465;</button></div>';
-  }
+  each(state.cats, function (c) {
+    html += '<div class="list-row cat-row flex">' +
+      '<div class="grow"><div class="t">' + escapeHtml(c.name) + '</div><div class="muted" style="font-size:13px">' + t('itemsCount', { count: catItemCount(c.id) }) + '</div></div>' +
+      '<button class="icon-btn tap orange" onclick="renameCategory(\'' + c.id + '\')">&#9998;</button>' +
+      '<button class="icon-btn tap red" onclick="deleteCategory(\'' + c.id + '\')">&#128465;</button></div>';
+  });
+  $('catList').innerHTML = html || '<div class="empty muted">' + t('noCats') + '</div>';
+  var sel = $('mgrCat'), cur = sel.value;
+  fillCatSelect(sel, cur);
+}
+
+function renderManager() {
+  renderCatList();
+  var q = ($('mgrSearch').value || '').toLowerCase();
+  var hasCats = state.cats.length > 0, html = '';
+  each(catGroups(), function (g) {
+    var rows = '';
+    each(state.items, function (it) {
+      if (itemCat(it) !== g.id) return;
+      if (q && it.name.toLowerCase().indexOf(q) < 0) return;
+      rows += '<div class="list-row flex">' +
+        '<div class="thumb"' + (it.img ? ' style="background-image:url(' + it.img + ')">' : '>&#127869;') + '</div>' +
+        '<div class="grow t">' + escapeHtml(it.name) + ' - ' + escapeHtml(money(it.price)) + '</div>' +
+        '<button class="icon-btn tap orange" onclick="openEdit(\'' + it.id + '\')">&#9881;</button>' +
+        '<button class="icon-btn tap red" onclick="deleteItem(\'' + it.id + '\')">&#128465;</button></div>';
+    });
+    if (!rows) return;
+    if (hasCats) html += '<div class="mgr-sec">' + escapeHtml(g.name) + '</div>';
+    html += rows;
+  });
   $('mgrList').innerHTML = html || '<div class="empty muted">' + (state.items.length ? t('noMatch') : t('noItems')) + '</div>';
 }
 
@@ -1044,7 +1355,7 @@ function deleteItem(id) {
   if (!confirm(t('confirmDelete'))) return;
   for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) { state.items.splice(i, 1); break; }
   for (var j = 0; j < state.cart.length; j++) if (state.cart[j].id === id) { state.cart.splice(j, 1); break; }
-  save();
+  save(true);
   renderManager();
 }
 
@@ -1057,6 +1368,7 @@ function openEdit(id) {
   $('editName').value = it.name;
   $('editPrice').value = it.price;
   setEditImg(it.img || '');
+  fillCatSelect($('editCat'), itemCat(it));
   $('editModal').className = 'modal';
 }
 function closeEdit() { $('editModal').className = 'modal hidden'; editId = null; }
@@ -1066,8 +1378,8 @@ function saveEdit() {
   var name = trim($('editName').value);
   var price = parseFloat($('editPrice').value);
   if (!name || isNaN(price) || price < 0) { toast(t('enterNamePrice')); return; }
-  it.name = name; it.price = price; it.img = editImg;
-  save();
+  it.name = name; it.price = price; it.img = editImg; it.catId = $('editCat').value;
+  save(true);
   closeEdit();
   renderManager();
 }
@@ -1075,7 +1387,7 @@ function saveEdit() {
 // ======================= invoice settings =======================
 function setSetting(key, val) {
   state.settings[key] = val;
-  save();
+  save(key === 'logo');
   if (key === 'logoSize') $('logoSizeVal').textContent = val;
   if (key === 'fontSize') $('fontSizeVal').textContent = val;
   if (key === 'depth') $('depthVal').textContent = val;
@@ -1204,6 +1516,8 @@ function renderPrinter() {
   $('pDot').className = dotCls; $('pStateText').textContent = label; $('pStateText').className = txtCls;
   $('mDot').className = dotCls; $('mStateText').textContent = (printer.name ? printer.name + ' · ' : '') + label;
   $('connectBtn').textContent = t('connect');
+  $('hDot').className = dotCls;
+  $('hPrinter').textContent = printer.state === 'connected' && printer.name ? printer.name : t('searchPrinter');
   $('disconnectBtn').className = 'btn mt ghost tap' + (printer.state === 'none' ? ' hidden' : '');
   $('scanBtn').innerHTML = scanning ? escapeHtml(t('stopScan')) + '<span class="spinner"></span>' : escapeHtml(t('scanPrinters'));
   $('printBtn').disabled = printing;
@@ -1585,6 +1899,51 @@ function printRecharge() {
 }
 
 // ======================= start =======================
+// ======================= fast taps =======================
+// UIWebView waits ~300ms after a tap before sending "click" (to see if it is a
+// double tap). Here a short tap on anything with an onclick runs at once;
+// inputs, selects and labels (file pickers, switches) keep the normal behaviour.
+(function () {
+  var el = null, x0 = 0, y0 = 0, t0 = 0;
+  function target(n) {
+    for (; n && n !== document; n = n.parentNode) {
+      if (n.nodeType !== 1) continue;
+      var tag = n.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'LABEL') return null;
+      if (n.getAttribute('onclick') !== null) return n;
+    }
+    return null;
+  }
+  function release() { if (el) { el.className = el.className.replace(/ pressed/g, ''); el = null; } }
+  document.addEventListener('touchstart', function (e) {
+    release();
+    if (e.touches.length !== 1) return;
+    el = target(e.target);
+    if (!el) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = new Date().getTime();
+    el.className += ' pressed';
+  }, false);
+  document.addEventListener('touchmove', function (e) {
+    if (!el) return;
+    var p = e.touches[0];
+    if (Math.abs(p.clientX - x0) > 10 || Math.abs(p.clientY - y0) > 10) release();
+  }, false);
+  document.addEventListener('touchcancel', release, false);
+  document.addEventListener('touchend', function (e) {
+    if (!el) return;
+    var src = e.target.nodeType === 1 ? e.target : el;
+    var isLong = new Date().getTime() - t0 > 700;
+    release();
+    if (isLong) return;
+    e.preventDefault();   // stops the delayed (and duplicate) click
+    var ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'SELECT') && ae.blur) ae.blur();
+    var ev = document.createEvent('MouseEvents');
+    ev.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
+    src.dispatchEvent(ev);
+  }, false);
+})();
+
 applyTexts();
 go('home');
 renderPrinter();
